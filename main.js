@@ -146,9 +146,9 @@ function initializeModals() {
     
     sections.forEach(section => {
         const modal = document.getElementById(`modal${capitalize(section)}`);
-        const openBtn = document.querySelector(`[data-section="${section}"]`);
-        const closeBtn = document.querySelector(`[data-close="${section}"]`);
-        const cancelBtn = document.querySelector(`[data-cancel="${section}"]`);
+        const openBtn = document.querySelector(`button[data-section="${section}"]`);
+const closeBtn = document.querySelector(`button[data-close="${section}"]`);
+const cancelBtn = document.querySelector(`button[data-cancel="${section}"]`);
         
         // Open modal
         openBtn.addEventListener('click', () => {
@@ -162,15 +162,21 @@ function initializeModals() {
             document.body.style.overflow = 'auto';
         };
         
-        closeBtn.addEventListener('click', closeModal);
-        cancelBtn.addEventListener('click', closeModal);
+        if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeModal();
+    });
+}
+if (cancelBtn) {
+    cancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeModal();
+    });
+}
         
         // Close modal when clicking outside
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
+        
     });
     
     // Close any modal with ESC key
