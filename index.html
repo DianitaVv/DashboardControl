@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Hemodiálisis - Semana 2</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>CENTRO DE HEMODIÁLISIS</h1>
+                <p class="header-subtitle">Dashboard de Desempeño Operativo</p>
+            </div>
+            <div class="header-right">
+                <div class="week-info">
+                    <span class="week-label">SEMANA</span>
+                    <span class="week-number">2</span>
+                </div>
+                <div class="date-info">
+                    <span>04 al 10 de Enero 2026</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Grid -->
+    <main class="dashboard-grid">
+        
+        <!-- CLINICAL QUALITY -->
+        <section class="dashboard-section clinical-quality">
+            <div class="section-header">
+                <h2>CALIDAD CLÍNICA</h2>
+                <button class="btn-edit" data-section="clinical">Editar Datos</button>
+            </div>
+            <div class="section-content">
+                <!-- Sesiones Realizadas -->
+                <div class="metric-card">
+                    <div class="metric-label">
+                        Sesiones Realizadas
+                        <span class="tooltip-icon" data-tooltip="Total de sesiones completadas en la semana">?</span>
+                    </div>
+                    <div class="metric-value-large" id="sessions-realized-display">43</div>
+                    <div class="metric-comparison positive">
+                        <span class="arrow">▲</span>
+                        <span id="sessions-vs-programmed">vs Programadas: 40 (107.5%)</span>
+                    </div>
+                </div>
+
+                <!-- Tasa de Incidencias -->
+                <div class="metric-card">
+                    <div class="metric-label">
+                        Tasa de Incidencias
+                        <span class="tooltip-icon" data-tooltip="(Sesiones Canceladas / Sesiones Programadas) × 100">?</span>
+                    </div>
+                    <div class="metric-value" id="incident-rate">0<span class="metric-unit">%</span></div>
+                    <div class="metric-comparison positive">
+                        <span id="cancelled-sessions-display">0 Canceladas</span>
+                    </div>
+                </div>
+
+                <!-- Capacidad Utilizada -->
+                <div class="metric-card">
+                    <div class="metric-label">
+                        Capacidad Utilizada
+                        <span class="tooltip-icon" data-tooltip="(Sesiones Realizadas / 72) × 100">?</span>
+                    </div>
+                    <div class="metric-value" id="capacity-used">59.7<span class="metric-unit">%</span></div>
+                    <div class="metric-comparison positive">
+                        <span class="arrow">▲</span>
+                        <span>Capacidad Máxima: 72 sesiones</span>
+                    </div>
+                </div>
+
+                <!-- Alarmas de Tratamiento -->
+                <div class="metric-card pending-card">
+                    <div class="metric-label">Alarmas de Tratamiento</div>
+                    <div class="metric-value-large pending" id="treatment-alarms">--</div>
+                    <div class="metric-badge pending-badge">Pendiente</div>
+                </div>
+
+                <!-- Gráfica de Sesiones por Semana -->
+                <div class="chart-card wide">
+                    <div class="chart-header">
+                        <h3>Sesiones por Semana</h3>
+                        <div class="chart-subtitle" id="sessions-trend-total">Últimas 6 semanas</div>
+                    </div>
+                    <canvas id="sessionsWeeklyChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- OPERATIONAL METRICS -->
+        <section class="dashboard-section operational-metrics">
+            <div class="section-header">
+                <h2>MÉTRICAS OPERACIONALES</h2>
+                <button class="btn-edit" data-section="operational" style="display: none;">Editar Datos</button>
+                <span class="auto-sync-badge">Actualización automática desde Calidad Clínica</span>
+            </div>
+            <div class="section-content">
+                <!-- Sesiones Esta Semana -->
+                <div class="metric-card">
+                    <div class="metric-label">Sesiones Esta Semana</div>
+                    <div class="metric-value-large" id="op-sessions-week">43</div>
+                    <div class="metric-comparison positive">
+                        <span class="arrow">▲</span>
+                        <span id="op-sessions-comparison">vs Programadas: 40</span>
+                    </div>
+                </div>
+
+                <!-- Capacidad de Utilización -->
+                <div class="metric-card gauge-card">
+                    <div class="metric-label">Capacidad de Utilización</div>
+                    <div class="gauge-container">
+                        <canvas id="operationalCapacityGauge"></canvas>
+                        <div class="gauge-value">
+                            <span id="op-capacity-percentage">59.7</span><span class="unit">%</span>
+                        </div>
+                        <div class="gauge-label" id="op-capacity-label">Bueno</div>
+                    </div>
+                </div>
+
+                <!-- Inicios a Tiempo - Pendiente -->
+                <div class="metric-card pending-card">
+                    <div class="metric-label">Inicios a Tiempo</div>
+                    <div class="metric-value pending">--<span class="metric-unit">%</span></div>
+                    <div class="metric-badge pending-badge">Pendiente</div>
+                </div>
+
+                <!-- Pacientes Activos - Pendiente -->
+                <div class="metric-card pending-card">
+                    <div class="metric-label">Pacientes Activos</div>
+                    <div class="metric-value-large pending">--</div>
+                    <div class="metric-badge pending-badge">Pendiente</div>
+                </div>
+
+                <!-- Gráfica de Sesiones por Día -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Sesiones por Día de la Semana</h3>
+                        <div class="chart-subtitle" id="op-daily-total">Semana Actual</div>
+                    </div>
+                    <canvas id="dailySessionsChart"></canvas>
+                </div>
+
+                <!-- Tendencia de Capacidad -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Tendencia de Capacidad Utilizada</h3>
+                        <div class="chart-subtitle">Últimas 6 semanas</div>
+                    </div>
+                    <canvas id="capacityTrendChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- PATIENT EXPERIENCE -->
+        <section class="dashboard-section patient-experience">
+            <div class="section-header">
+                <h2>EXPERIENCIA DEL PACIENTE</h2>
+                <button class="btn-edit" data-section="patient">Editar Datos</button>
+            </div>
+            <div class="section-content">
+                <!-- Amabilidad y Calidad -->
+                <div class="chart-card satisfaction-chart">
+                    <div class="chart-header">
+                        <h3>Amabilidad y Calidad</h3>
+                        <div class="chart-subtitle" id="amabilidad-total">Total: 13 encuestas</div>
+                    </div>
+                    <canvas id="amabilidadChart"></canvas>
+                </div>
+
+                <!-- Limpieza e Higiene -->
+                <div class="chart-card satisfaction-chart">
+                    <div class="chart-header">
+                        <h3>Limpieza e Higiene</h3>
+                        <div class="chart-subtitle" id="limpieza-total">Total: 13 encuestas</div>
+                    </div>
+                    <canvas id="limpiezaChart"></canvas>
+                </div>
+
+                <!-- Puntualidad -->
+                <div class="chart-card satisfaction-chart">
+                    <div class="chart-header">
+                        <h3>Puntualidad</h3>
+                        <div class="chart-subtitle" id="puntualidad-total">Total: 13 encuestas</div>
+                    </div>
+                    <canvas id="puntualidadChart"></canvas>
+                </div>
+
+                <!-- Comparativa de Satisfacción -->
+                <div class="chart-card wide">
+                    <div class="chart-header">
+                        <h3>Comparativa de Satisfacción</h3>
+                    </div>
+                    <canvas id="satisfactionComparisonChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- FINANCIAL OVERVIEW -->
+        <section class="dashboard-section financial-overview">
+            <div class="section-header">
+                <h2>PANORAMA FINANCIERO</h2>
+                <button class="btn-edit" data-section="financial">Editar Datos</button>
+            </div>
+            <div class="section-content">
+                <!-- Ingreso Por Sesión -->
+                <div class="metric-card financial">
+                    <div class="metric-label">
+                        Ingreso Por Sesión
+                        <span class="tooltip-icon" data-tooltip="Ingresos Totales / Sesiones Realizadas">?</span>
+                    </div>
+                    <div class="metric-value financial" id="revenue-session">$1,470</div>
+                    <div class="metric-comparison">
+                        <span id="revenue-session-comparison">Calculado automáticamente</span>
+                    </div>
+                </div>
+
+                <!-- Costo Por Sesión -->
+                <div class="metric-card financial">
+                    <div class="metric-label">
+                        Costo Por Sesión
+                        <span class="tooltip-icon" data-tooltip="Valor editable ingresado manualmente">?</span>
+                    </div>
+                    <div class="metric-value financial" id="cost-session">$1,200</div>
+                    <div class="metric-comparison">
+                        <span>Editable</span>
+                    </div>
+                </div>
+
+                <!-- Ingresos Semanales -->
+                <div class="metric-card financial highlight">
+                    <div class="metric-label">
+                        Ingresos Semanales
+                        <span class="tooltip-icon" data-tooltip="Suma total de ingresos de la semana">?</span>
+                    </div>
+                    <div class="metric-value financial large" id="weekly-revenue">$63,200</div>
+                    <div class="metric-comparison positive">
+                        <span class="arrow">▲</span>
+                        <span id="weekly-revenue-comparison">vs Meta: $60,000</span>
+                    </div>
+                </div>
+
+                <!-- Utilidad Neta -->
+                <div class="metric-card financial highlight">
+                    <div class="metric-label">
+                        Utilidad Neta
+                        <span class="tooltip-icon" data-tooltip="Ingresos - (Costos + Nómina + Servicios + Pólizas)">?</span>
+                    </div>
+                    <div class="metric-value financial large" id="net-profit">$15,000</div>
+                    <div class="metric-comparison positive">
+                        <span class="arrow">▲</span>
+                        <span>Semanal</span>
+                    </div>
+                </div>
+
+                <!-- Margen de Utilidad -->
+                <div class="metric-card financial">
+                    <div class="metric-label">
+                        Margen de Utilidad
+                        <span class="tooltip-icon" data-tooltip="(Utilidad Neta / Ingresos Totales) × 100">?</span>
+                    </div>
+                    <div class="metric-value" id="profit-margin">23.7<span class="metric-unit">%</span></div>
+                    <div class="metric-comparison positive">
+                        <span class="arrow">▲</span>
+                        <span>Mensual</span>
+                    </div>
+                </div>
+
+                <!-- Costo Total de Inventarios -->
+                <div class="metric-card financial">
+                    <div class="metric-label">
+                        Costo Total Inventarios
+                        <span class="tooltip-icon" data-tooltip="Suma de costos de inventario semanal">?</span>
+                    </div>
+                    <div class="metric-value financial" id="inventory-cost">$29,940</div>
+                    <div class="metric-comparison">
+                        <span>Esta Semana</span>
+                    </div>
+                </div>
+
+                <!-- Tendencia de Ingresos y Costos -->
+                <div class="chart-card wide financial-chart">
+                    <div class="chart-header">
+                        <h3>Tendencia de Ingresos y Costos</h3>
+                    </div>
+                    <canvas id="revenueCostChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Tooltip Container -->
+    <div class="tooltip-container" id="tooltipContainer"></div>
+
+    <!-- Modal 1: Clinical Quality -->
+    <div class="modal" id="modalClinical">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Captura de Datos - Calidad Clínica</h2>
+                <button class="modal-close" data-close="clinical">&times;</button>
+            </div>
+            
+            <form id="formClinical" class="data-form">
+                <div class="form-section">
+                    <h3 class="form-section-title">Sesiones de la Semana</h3>
+                    
+                    <!-- Tabla de Sesiones por Día -->
+                    <div class="sessions-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Lunes</th>
+                                    <th>Martes</th>
+                                    <th>Miércoles</th>
+                                    <th>Jueves</th>
+                                    <th>Viernes</th>
+                                    <th>Sábado</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><input type="number" id="sessions-mon" name="sessions-mon" min="0" value="12" required></td>
+                                    <td><input type="number" id="sessions-tue" name="sessions-tue" min="0" value="4" required></td>
+                                    <td><input type="number" id="sessions-wed" name="sessions-wed" min="0" value="7" required></td>
+                                    <td><input type="number" id="sessions-thu" name="sessions-thu" min="0" value="5" required></td>
+                                    <td><input type="number" id="sessions-fri" name="sessions-fri" min="0" value="8" required></td>
+                                    <td><input type="number" id="sessions-sat" name="sessions-sat" min="0" value="7" required></td>
+                                    <td class="total-cell"><strong id="sessions-week-total">43</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Otros Datos -->
+                    <div class="form-grid" style="margin-top: 1.5rem;">
+                        <div class="form-field">
+                            <label for="sessions-programmed">Sesiones Programadas</label>
+                            <input type="number" id="sessions-programmed" name="sessions-programmed" step="1" min="0" value="40" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="sessions-cancelled">Sesiones Canceladas</label>
+                            <input type="number" id="sessions-cancelled" name="sessions-cancelled" step="1" min="0" value="0" required>
+                        </div>
+                    </div>
+
+                    <!-- Datos Históricos para Gráfica -->
+                    <h3 class="form-section-title" style="margin-top: 2rem;">Datos Históricos (últimas 6 semanas)</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="week-1">Semana -5</label>
+                            <input type="number" id="week-1" name="week-1" step="1" min="0" value="38" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="week-2">Semana -4</label>
+                            <input type="number" id="week-2" name="week-2" step="1" min="0" value="40" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="week-3">Semana -3</label>
+                            <input type="number" id="week-3" name="week-3" step="1" min="0" value="42" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="week-4">Semana -2</label>
+                            <input type="number" id="week-4" name="week-4" step="1" min="0" value="41" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="week-5">Semana -1</label>
+                            <input type="number" id="week-5" name="week-5" step="1" min="0" value="39" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="week-6">Semana Actual</label>
+                            <input type="number" id="week-6" name="week-6" step="1" min="0" value="43" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" data-cancel="clinical">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar y Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 2: Operational Metrics - NO NEEDED (Auto-sync from Clinical Quality) -->
+    <!--
+    <div class="modal" id="modalOperational">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Captura de Datos - Métricas Operacionales</h2>
+                <button class="modal-close" data-close="operational">&times;</button>
+            </div>
+            
+            <form id="formOperational" class="data-form">
+                <div class="form-section">
+                    <p>Este cuadrante se actualiza automáticamente desde Calidad Clínica.</p>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" data-cancel="operational">Cerrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    -->
+
+    <!-- Modal 3: Patient Experience -->
+    <div class="modal" id="modalPatient">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Captura de Datos - Experiencia del Paciente</h2>
+                <button class="modal-close" data-close="patient">&times;</button>
+            </div>
+            
+            <form id="formPatient" class="data-form">
+                <div class="form-section">
+                    <h3 class="form-section-title">Amabilidad y Calidad</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="amabilidad-insatisfecho">Insatisfecho</label>
+                            <input type="number" id="amabilidad-insatisfecho" name="amabilidad-insatisfecho" step="1" min="0" value="0" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="amabilidad-satisfecho">Satisfecho</label>
+                            <input type="number" id="amabilidad-satisfecho" name="amabilidad-satisfecho" step="1" min="0" value="2" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="amabilidad-muy-satisfecho">Muy Satisfecho</label>
+                            <input type="number" id="amabilidad-muy-satisfecho" name="amabilidad-muy-satisfecho" step="1" min="0" value="11" required>
+                        </div>
+                    </div>
+
+                    <h3 class="form-section-title" style="margin-top: 2rem;">Limpieza e Higiene</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="limpieza-insatisfecho">Insatisfecho</label>
+                            <input type="number" id="limpieza-insatisfecho" name="limpieza-insatisfecho" step="1" min="0" value="0" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="limpieza-satisfecho">Satisfecho</label>
+                            <input type="number" id="limpieza-satisfecho" name="limpieza-satisfecho" step="1" min="0" value="4" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="limpieza-muy-satisfecho">Muy Satisfecho</label>
+                            <input type="number" id="limpieza-muy-satisfecho" name="limpieza-muy-satisfecho" step="1" min="0" value="9" required>
+                        </div>
+                    </div>
+
+                    <h3 class="form-section-title" style="margin-top: 2rem;">Puntualidad</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="puntualidad-insatisfecho">Insatisfecho</label>
+                            <input type="number" id="puntualidad-insatisfecho" name="puntualidad-insatisfecho" step="1" min="0" value="0" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="puntualidad-satisfecho">Satisfecho</label>
+                            <input type="number" id="puntualidad-satisfecho" name="puntualidad-satisfecho" step="1" min="0" value="5" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="puntualidad-muy-satisfecho">Muy Satisfecho</label>
+                            <input type="number" id="puntualidad-muy-satisfecho" name="puntualidad-muy-satisfecho" step="1" min="0" value="8" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" data-cancel="patient">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar y Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal 4: Financial Overview -->
+    <div class="modal" id="modalFinancial">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Captura de Datos - Panorama Financiero</h2>
+                <button class="modal-close" data-close="financial">&times;</button>
+            </div>
+            
+            <form id="formFinancial" class="data-form">
+                <!-- Ingresos y Datos Generales -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Datos Generales</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="total-revenue-fin">Ingresos Totales Semana ($)</label>
+                            <input type="number" id="total-revenue-fin" name="total-revenue-fin" step="0.01" min="0" value="63200" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="cost-per-session">Costo Por Sesión ($)</label>
+                            <input type="number" id="cost-per-session" name="cost-per-session" step="0.01" min="0" value="1200" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="target-revenue-fin">Meta Semanal ($)</label>
+                            <input type="number" id="target-revenue-fin" name="target-revenue-fin" step="0.01" min="0" value="60000" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gastos Operativos -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Gastos Operativos</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="payroll-operations">Nómina Operativos ($)</label>
+                            <input type="number" id="payroll-operations" name="payroll-operations" step="0.01" min="0" value="0" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="payroll-admin">Nómina Administrativos ($)</label>
+                            <input type="number" id="payroll-admin" name="payroll-admin" step="0.01" min="0" value="0" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="general-services">Servicios Generales ($)</label>
+                            <input type="number" id="general-services" name="general-services" step="0.01" min="0" value="0" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="insurance-policies">Pólizas ($)</label>
+                            <input type="number" id="insurance-policies" name="insurance-policies" step="0.01" min="0" value="0" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Inventarios -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Inventario de Insumos - Sesiones Semanales</h3>
+                    <div class="inventory-table-container">
+                        <table class="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Descripción</th>
+                                    <th>N° Unidades</th>
+                                    <th>$ Precio Unitario</th>
+                                    <th>$ Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Filtro</td>
+                                    <td><input type="number" class="inv-qty" data-item="filtro" step="1" min="0" value="38"></td>
+                                    <td><input type="number" class="inv-price" data-item="filtro" step="0.01" min="0" value="80.00"></td>
+                                    <td class="inv-total" id="total-filtro">$3,040.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Heparina</td>
+                                    <td><input type="number" class="inv-qty" data-item="heparina" step="1" min="0" value="24"></td>
+                                    <td><input type="number" class="inv-price" data-item="heparina" step="0.01" min="0" value="70.00"></td>
+                                    <td class="inv-total" id="total-heparina">$1,680.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Ácido potasio</td>
+                                    <td><input type="number" class="inv-qty" data-item="acido-potasio" step="1" min="0" value="26"></td>
+                                    <td><input type="number" class="inv-price" data-item="acido-potasio" step="0.01" min="0" value="50.00"></td>
+                                    <td class="inv-total" id="total-acido-potasio">$1,300.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Bicarbonato</td>
+                                    <td><input type="number" class="inv-qty" data-item="bicarbonato" step="1" min="0" value="33"></td>
+                                    <td><input type="number" class="inv-price" data-item="bicarbonato" step="0.01" min="0" value="30.00"></td>
+                                    <td class="inv-total" id="total-bicarbonato">$990.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Líneas</td>
+                                    <td><input type="number" class="inv-qty" data-item="lineas" step="1" min="0" value="38"></td>
+                                    <td><input type="number" class="inv-price" data-item="lineas" step="0.01" min="0" value="5.00"></td>
+                                    <td class="inv-total" id="total-lineas">$190.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Kit Catéter</td>
+                                    <td><input type="number" class="inv-qty" data-item="kit-cateter" step="1" min="0" value="29"></td>
+                                    <td><input type="number" class="inv-price" data-item="kit-cateter" step="0.01" min="0" value="10.00"></td>
+                                    <td class="inv-total" id="total-kit-cateter">$290.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Solución Fisiológica 1000ml</td>
+                                    <td><input type="number" class="inv-qty" data-item="solucion-fisio" step="1" min="0" value="38"></td>
+                                    <td><input type="number" class="inv-price" data-item="solucion-fisio" step="0.01" min="0" value="20.00"></td>
+                                    <td class="inv-total" id="total-solucion-fisio">$760.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Ácido Cítrico</td>
+                                    <td><input type="number" class="inv-qty" data-item="acido-citrico" step="1" min="0" value="3"></td>
+                                    <td><input type="number" class="inv-price" data-item="acido-citrico" step="0.01" min="0" value="20.00"></td>
+                                    <td class="inv-total" id="total-acido-citrico">$60.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Clorhexedina solución 2%</td>
+                                    <td><input type="number" class="inv-qty" data-item="clorhexedina" step="1" min="0" value="1"></td>
+                                    <td><input type="number" class="inv-price" data-item="clorhexedina" step="0.01" min="0" value="10.00"></td>
+                                    <td class="inv-total" id="total-clorhexedina">$10.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Normogotero</td>
+                                    <td><input type="number" class="inv-qty" data-item="normogotero" step="1" min="0" value="23"></td>
+                                    <td><input type="number" class="inv-price" data-item="normogotero" step="0.01" min="0" value="90.00"></td>
+                                    <td class="inv-total" id="total-normogotero">$2,070.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Jeringa 10 ml</td>
+                                    <td><input type="number" class="inv-qty" data-item="jeringa-10" step="1" min="0" value="38"></td>
+                                    <td><input type="number" class="inv-price" data-item="jeringa-10" step="0.01" min="0" value="100.00"></td>
+                                    <td class="inv-total" id="total-jeringa-10">$3,800.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Aguja arterial</td>
+                                    <td><input type="number" class="inv-qty" data-item="aguja-arterial" step="1" min="0" value="7"></td>
+                                    <td><input type="number" class="inv-price" data-item="aguja-arterial" step="0.01" min="0" value="150.00"></td>
+                                    <td class="inv-total" id="total-aguja-arterial">$1,050.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Aguja venosa</td>
+                                    <td><input type="number" class="inv-qty" data-item="aguja-venosa" step="1" min="0" value="8"></td>
+                                    <td><input type="number" class="inv-price" data-item="aguja-venosa" step="0.01" min="0" value="200.00"></td>
+                                    <td class="inv-total" id="total-aguja-venosa">$1,600.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Aguja Hipo 20x32</td>
+                                    <td><input type="number" class="inv-qty" data-item="aguja-hipo" step="1" min="0" value="28"></td>
+                                    <td><input type="number" class="inv-price" data-item="aguja-hipo" step="0.01" min="0" value="250.00"></td>
+                                    <td class="inv-total" id="total-aguja-hipo">$7,000.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Kit de fistula</td>
+                                    <td><input type="number" class="inv-qty" data-item="kit-fistula" step="1" min="0" value="6"></td>
+                                    <td><input type="number" class="inv-price" data-item="kit-fistula" step="0.01" min="0" value="1000.00"></td>
+                                    <td class="inv-total" id="total-kit-fistula">$6,000.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Jabón clorhex</td>
+                                    <td><input type="number" class="inv-qty" data-item="jabon-clorhex" step="1" min="0" value="1"></td>
+                                    <td><input type="number" class="inv-price" data-item="jabon-clorhex" step="0.01" min="0" value="100.00"></td>
+                                    <td class="inv-total" id="total-jabon-clorhex">$100.00</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="total-row">
+                                    <td colspan="3"><strong>COSTO TOTAL INVENTARIOS</strong></td>
+                                    <td><strong id="inventory-grand-total">$29,940.00</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" data-cancel="financial">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar y Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
