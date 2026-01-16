@@ -1116,9 +1116,8 @@ function updateFinancialOverview(formData) {
     
     // Calculate KPIs
     const weeklyRevenue = publicCost * sessionsWeek;
-    const weeklyCosts = costPerSession * sessionsWeek;
-    const netProfit = weeklyRevenue - weeklyCosts;
-    const profitMargin = publicCost > 0 ? ((costPerSession / publicCost) * 100).toFixed(1) : 0;
+    const utilityPerSession = publicCost - costPerSession;
+    const profitMargin = publicCost > 0 ? ((utilityPerSession / publicCost) * 100).toFixed(1) : 0;
     
     // Get historical data
     const numWeeksRevenue = parseInt(data['num-weeks-revenue']) || 5;
@@ -1186,16 +1185,16 @@ function updateFinancialOverview(formData) {
         }
     }
     
-    // Update Net Profit
+    // Update Net Profit (Utility per Session)
     const netProfitEl = document.getElementById('net-profit');
     if (netProfitEl) {
-        netProfitEl.textContent = '$' + formatLargeNumber(netProfit);
+        netProfitEl.textContent = '$' + formatNumber(utilityPerSession);
     }
     
     const netProfitCompEl = netProfitEl ? netProfitEl.nextElementSibling : null;
     if (netProfitCompEl) {
         netProfitCompEl.classList.remove('positive', 'negative');
-        if (netProfit >= 0) {
+        if (utilityPerSession >= 0) {
             netProfitCompEl.classList.add('positive');
             const arrow = netProfitCompEl.querySelector('.arrow');
             if (arrow) arrow.textContent = '▲';
