@@ -8,8 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 </head>
 <body>
     <!-- Header -->
@@ -41,58 +40,49 @@
                 <button class="btn-edit" data-section="clinical">Editar Datos</button>
             </div>
             <div class="section-content">
-                <!-- Sesiones Realizadas -->
+                <!-- Tasa de Infección -->
                 <div class="metric-card">
                     <div class="metric-label">
-                        Sesiones Realizadas
-                        <span class="tooltip-icon" data-tooltip="Total de sesiones completadas en la semana">?</span>
+                        Tasa de Infección
+                        <span class="tooltip-icon" data-tooltip="Porcentaje de infecciones sobre sesiones realizadas">?</span>
                     </div>
-                    <div class="metric-value-large" id="sessions-realized-display">43</div>
-                    <div class="metric-comparison positive">
-                        <span class="arrow">▲</span>
-                        <span id="sessions-vs-programmed">vs Programadas: 40 (107.5%)</span>
+                    <div class="metric-value" id="infection-rate">0.35<span class="metric-unit">%</span></div>
+                    <div class="metric-comparison negative">
+                        <span class="arrow">▼</span>
+                        <span>Meta Semanal: menor a 0.50%</span>
                     </div>
                 </div>
 
-                <!-- Tasa de Incidencias -->
+                <!-- Eventos Adversos -->
                 <div class="metric-card">
-                    <div class="metric-label">
-                        Tasa de Incidencias
-                        <span class="tooltip-icon" data-tooltip="(Sesiones Canceladas / Sesiones Programadas) × 100">?</span>
-                    </div>
-                    <div class="metric-value" id="incident-rate">0<span class="metric-unit">%</span></div>
-                    <div class="metric-comparison positive">
-                        <span id="cancelled-sessions-display">0 Canceladas</span>
-                    </div>
+                    <div class="metric-label">Eventos Adversos</div>
+                    <div class="metric-value-large" id="adverse-events">2</div>
+                    <div class="metric-badge today">Hoy</div>
                 </div>
 
-                <!-- Capacidad Utilizada -->
-                <div class="metric-card">
-                    <div class="metric-label">
-                        Capacidad Utilizada
-                        <span class="tooltip-icon" data-tooltip="(Sesiones Realizadas / 72) × 100">?</span>
-                    </div>
-                    <div class="metric-value" id="capacity-used">59.7<span class="metric-unit">%</span></div>
-                    <div class="metric-comparison positive">
-                        <span class="arrow">▲</span>
-                        <span>Capacidad Máxima: 72 sesiones</span>
-                    </div>
-                </div>
-
-                <!-- Alarmas de Tratamiento -->
+                <!-- Cumplimiento de Protocolos - Pendiente -->
                 <div class="metric-card pending-card">
-                    <div class="metric-label">Alarmas de Tratamiento</div>
-                    <div class="metric-value-large pending" id="treatment-alarms">--</div>
+                    <div class="metric-label">Cumplimiento de Protocolos</div>
+                    <div class="metric-value pending">--<span class="metric-unit">%</span></div>
                     <div class="metric-badge pending-badge">Pendiente</div>
                 </div>
 
-                <!-- Gráfica de Sesiones por Semana -->
+                <!-- Alarmas de Tratamiento -->
+                <div class="metric-card">
+                    <div class="metric-label">Alarmas de Tratamiento</div>
+                    <div class="metric-value-large" id="treatment-alarms">4</div>
+                    <div class="metric-status resolved">
+                        <span class="check-icon">✓</span>
+                        <span>Resueltas <strong>100%</strong> a Tiempo</span>
+                    </div>
+                </div>
+
+                <!-- Gráfica de Eventos Adversos por Semana -->
                 <div class="chart-card wide">
                     <div class="chart-header">
-                        <h3>Sesiones por Semana</h3>
-                        <div class="chart-subtitle" id="sessions-trend-total">Últimas 6 semanas</div>
+                        <h3>Eventos Adversos por Semana</h3>
                     </div>
-                    <canvas id="sessionsWeeklyChart"></canvas>
+                    <canvas id="adverseEventsChart"></canvas>
                 </div>
             </div>
         </section>
@@ -101,29 +91,19 @@
         <section class="dashboard-section operational-metrics">
             <div class="section-header">
                 <h2>MÉTRICAS OPERACIONALES</h2>
-                <button class="btn-edit" data-section="operational" style="display: none;">Editar Datos</button>
-                <span class="auto-sync-badge">Actualización automática desde Calidad Clínica</span>
+                <button class="btn-edit" data-section="operational">Editar Datos</button>
             </div>
             <div class="section-content">
-                <!-- Sesiones Esta Semana -->
+                <!-- Utilización de Máquinas -->
                 <div class="metric-card">
-                    <div class="metric-label">Sesiones Esta Semana</div>
-                    <div class="metric-value-large" id="op-sessions-week">43</div>
+                    <div class="metric-label">
+                        Utilización de Máquinas
+                        <span class="tooltip-icon" data-tooltip="(Horas en Tratamiento / Horas Disponibles) × 100">?</span>
+                    </div>
+                    <div class="metric-value" id="machine-utilization">82<span class="metric-unit">%</span></div>
                     <div class="metric-comparison positive">
                         <span class="arrow">▲</span>
-                        <span id="op-sessions-comparison">vs Programadas: 40</span>
-                    </div>
-                </div>
-
-                <!-- Capacidad de Utilización -->
-                <div class="metric-card gauge-card">
-                    <div class="metric-label">Capacidad de Utilización</div>
-                    <div class="gauge-container">
-                        <canvas id="operationalCapacityGauge"></canvas>
-                        <div class="gauge-value">
-                            <span id="op-capacity-percentage">59.7</span><span class="unit">%</span>
-                        </div>
-                        <div class="gauge-label" id="op-capacity-label">Bueno</div>
+                        <span id="machine-util-comparison">vs Meta: 85%</span>
                     </div>
                 </div>
 
@@ -134,29 +114,55 @@
                     <div class="metric-badge pending-badge">Pendiente</div>
                 </div>
 
-                <!-- Pacientes Activos - Pendiente -->
-                <div class="metric-card pending-card">
+                <!-- Cancelaciones / No-Shows -->
+                <div class="metric-card">
+                    <div class="metric-label">Cancelaciones / No-Shows</div>
+                    <div class="metric-value-large complaints" id="cancellations">6</div>
+                    <div class="metric-comparison negative">
+                        <span class="arrow">▼</span>
+                        <span>Última Semana</span>
+                    </div>
+                </div>
+
+                <!-- Pacientes Activos -->
+                <div class="metric-card">
                     <div class="metric-label">Pacientes Activos</div>
-                    <div class="metric-value-large pending">--</div>
-                    <div class="metric-badge pending-badge">Pendiente</div>
+                    <div class="metric-value-large" id="active-patients-op">134</div>
+                    <div class="metric-comparison positive">
+                        <span class="arrow">▲</span>
+                        <span id="active-patients-change">5 Esta Semana</span>
+                    </div>
                 </div>
 
-                <!-- Gráfica de Sesiones por Día -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <h3>Sesiones por Día de la Semana</h3>
-                        <div class="chart-subtitle" id="op-daily-total">Semana Actual</div>
+                <!-- Capacidad de Utilización (Gauge) -->
+                <div class="metric-card gauge-card">
+                    <div class="metric-label">
+                        Capacidad de Utilización
+                        <span class="tooltip-icon" data-tooltip="(Sesiones Realizadas / Capacidad Máxima) × 100">?</span>
                     </div>
-                    <canvas id="dailySessionsChart"></canvas>
+                    <div class="gauge-container">
+                        <canvas id="operationalCapacityGauge"></canvas>
+                        <div class="gauge-value">
+                            <span id="op-capacity-percentage">88</span><span class="unit">%</span>
+                        </div>
+                        <div class="gauge-label" id="op-capacity-label">Excelente</div>
+                    </div>
                 </div>
 
-                <!-- Tendencia de Capacidad -->
+                <!-- Gráfica de Pacientes Activos por Semana -->
                 <div class="chart-card">
                     <div class="chart-header">
-                        <h3>Tendencia de Capacidad Utilizada</h3>
-                        <div class="chart-subtitle">Últimas 6 semanas</div>
+                        <h3>Pacientes Activos por Semana</h3>
                     </div>
-                    <canvas id="capacityTrendChart"></canvas>
+                    <canvas id="activePatientsChart"></canvas>
+                </div>
+
+                <!-- Gráfica de Capacidad de Utilización por Semana -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Capacidad de Utilización por Semana</h3>
+                    </div>
+                    <canvas id="capacityUtilizationChart"></canvas>
                 </div>
             </div>
         </section>
@@ -168,6 +174,34 @@
                 <button class="btn-edit" data-section="patient">Editar Datos</button>
             </div>
             <div class="section-content">
+                <!-- Satisfacción General (NPS) -->
+                <div class="metric-card nps-card">
+                    <div class="metric-label">
+                        Satisfacción General (NPS)
+                        <span class="tooltip-icon" data-tooltip="Promedio de % Muy Satisfecho en las 3 categorías">?</span>
+                    </div>
+                    <div class="nps-gauge">
+                        <canvas id="npsGauge"></canvas>
+                        <div class="nps-value">
+                            <span id="nps-score">87</span>
+                        </div>
+                    </div>
+                    <div class="gauge-label" id="nps-label">Excelente</div>
+                </div>
+
+                <!-- Retención de Pacientes -->
+                <div class="metric-card">
+                    <div class="metric-label">
+                        Retención de Pacientes
+                        <span class="tooltip-icon" data-tooltip="(Pacientes Fin de Mes / Pacientes Actuales) × 100">?</span>
+                    </div>
+                    <div class="metric-value" id="patient-retention">97<span class="metric-unit">%</span></div>
+                    <div class="metric-comparison positive">
+                        <span class="arrow">▲</span>
+                        <span>Mensual</span>
+                    </div>
+                </div>
+
                 <!-- Amabilidad y Calidad -->
                 <div class="chart-card satisfaction-chart">
                     <div class="chart-header">
@@ -311,10 +345,24 @@
             </div>
             
             <form id="formClinical" class="data-form">
+                <!-- Tasa de Infección -->
                 <div class="form-section">
-                    <h3 class="form-section-title">Sesiones de la Semana</h3>
-                    
-                    <!-- Tabla de Sesiones por Día -->
+                    <h3 class="form-section-title">Tasa de Infección</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="infection-rate-value">Tasa de Infección (%)</label>
+                            <input type="number" id="infection-rate-value" name="infection-rate-value" step="0.01" min="0" value="0.35" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="infection-rate-goal">Meta Semanal (%)</label>
+                            <input type="number" id="infection-rate-goal" name="infection-rate-goal" step="0.01" min="0" value="0.50" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Eventos Adversos por Día -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Eventos Adversos por Día</h3>
                     <div class="sessions-table">
                         <table>
                             <thead>
@@ -330,56 +378,54 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><input type="number" id="sessions-mon" name="sessions-mon" min="0" value="12" required></td>
-                                    <td><input type="number" id="sessions-tue" name="sessions-tue" min="0" value="4" required></td>
-                                    <td><input type="number" id="sessions-wed" name="sessions-wed" min="0" value="7" required></td>
-                                    <td><input type="number" id="sessions-thu" name="sessions-thu" min="0" value="5" required></td>
-                                    <td><input type="number" id="sessions-fri" name="sessions-fri" min="0" value="8" required></td>
-                                    <td><input type="number" id="sessions-sat" name="sessions-sat" min="0" value="7" required></td>
-                                    <td class="total-cell"><strong id="sessions-week-total">43</strong></td>
+                                    <td><input type="number" id="adverse-mon" name="adverse-mon" min="0" value="0" required></td>
+                                    <td><input type="number" id="adverse-tue" name="adverse-tue" min="0" value="1" required></td>
+                                    <td><input type="number" id="adverse-wed" name="adverse-wed" min="0" value="0" required></td>
+                                    <td><input type="number" id="adverse-thu" name="adverse-thu" min="0" value="0" required></td>
+                                    <td><input type="number" id="adverse-fri" name="adverse-fri" min="0" value="1" required></td>
+                                    <td><input type="number" id="adverse-sat" name="adverse-sat" min="0" value="0" required></td>
+                                    <td class="total-cell"><strong id="adverse-week-total">2</strong></td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
+                </div>
 
-                    <!-- Otros Datos -->
-                    <div class="form-grid" style="margin-top: 1.5rem;">
-                        <div class="form-field">
-                            <label for="sessions-programmed">Sesiones Programadas</label>
-                            <input type="number" id="sessions-programmed" name="sessions-programmed" step="1" min="0" value="40" required>
-                        </div>
-                        <div class="form-field">
-                            <label for="sessions-cancelled">Sesiones Canceladas</label>
-                            <input type="number" id="sessions-cancelled" name="sessions-cancelled" step="1" min="0" value="0" required>
-                        </div>
-                    </div>
-
-                    <!-- Datos Históricos para Gráfica -->
-                    <h3 class="form-section-title" style="margin-top: 2rem;">Datos Históricos (últimas 6 semanas)</h3>
+                <!-- Alarmas de Tratamiento -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Alarmas de Tratamiento</h3>
                     <div class="form-grid">
                         <div class="form-field">
-                            <label for="week-1">Semana -5</label>
-                            <input type="number" id="week-1" name="week-1" step="1" min="0" value="38" required>
+                            <label for="alarms-total">Total de Alarmas</label>
+                            <input type="number" id="alarms-total" name="alarms-total" step="1" min="0" value="4" required>
                         </div>
                         <div class="form-field">
-                            <label for="week-2">Semana -4</label>
-                            <input type="number" id="week-2" name="week-2" step="1" min="0" value="40" required>
+                            <label for="alarms-resolved-pct">Porcentaje Resueltas a Tiempo (%)</label>
+                            <input type="number" id="alarms-resolved-pct" name="alarms-resolved-pct" step="1" min="0" max="100" value="100" required>
                         </div>
+                    </div>
+                </div>
+
+                <!-- Datos Históricos de Eventos Adversos -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Datos Históricos - Eventos Adversos por Semana</h3>
+                    <div class="form-grid">
                         <div class="form-field">
-                            <label for="week-3">Semana -3</label>
-                            <input type="number" id="week-3" name="week-3" step="1" min="0" value="42" required>
+                            <label for="num-weeks">Número de Semanas a Mostrar</label>
+                            <input type="number" id="num-weeks" name="num-weeks" step="1" min="2" max="12" value="2" required>
                         </div>
-                        <div class="form-field">
-                            <label for="week-4">Semana -2</label>
-                            <input type="number" id="week-4" name="week-4" step="1" min="0" value="41" required>
-                        </div>
-                        <div class="form-field">
-                            <label for="week-5">Semana -1</label>
-                            <input type="number" id="week-5" name="week-5" step="1" min="0" value="39" required>
-                        </div>
-                        <div class="form-field">
-                            <label for="week-6">Semana Actual</label>
-                            <input type="number" id="week-6" name="week-6" step="1" min="0" value="43" readonly>
+                    </div>
+                    
+                    <div id="weekly-adverse-container" style="margin-top: 1rem;">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="adverse-week-1">Semana 1</label>
+                                <input type="number" id="adverse-week-1" name="adverse-week-1" step="1" min="0" value="3" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="adverse-week-2">Semana 2</label>
+                                <input type="number" id="adverse-week-2" name="adverse-week-2" step="1" min="0" value="2" required>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -392,8 +438,7 @@
         </div>
     </div>
 
-    <!-- Modal 2: Operational Metrics - NO NEEDED (Auto-sync from Clinical Quality) -->
-    <!--
+    <!-- Modal 2: Operational Metrics -->
     <div class="modal" id="modalOperational">
         <div class="modal-content">
             <div class="modal-header">
@@ -402,17 +447,130 @@
             </div>
             
             <form id="formOperational" class="data-form">
+                <!-- Utilización de Máquinas -->
                 <div class="form-section">
-                    <p>Este cuadrante se actualiza automáticamente desde Calidad Clínica.</p>
+                    <h3 class="form-section-title">Utilización de Máquinas</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="hours-treatment">Horas en Tratamiento</label>
+                            <input type="number" id="hours-treatment" name="hours-treatment" step="0.1" min="0" value="164" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="hours-available">Horas Disponibles</label>
+                            <input type="number" id="hours-available" name="hours-available" step="0.1" min="0" value="200" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="machine-util-target">Meta de Utilización (%)</label>
+                            <input type="number" id="machine-util-target" name="machine-util-target" step="1" min="0" max="100" value="85" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cancelaciones y Pacientes -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Cancelaciones y Pacientes Activos</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="cancellations-count">Cancelaciones / No-Shows</label>
+                            <input type="number" id="cancellations-count" name="cancellations-count" step="1" min="0" value="6" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="active-patients-current">Pacientes Activos Esta Semana</label>
+                            <input type="number" id="active-patients-current" name="active-patients-current" step="1" min="0" value="134" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="active-patients-previous">Pacientes Activos Semana Anterior</label>
+                            <input type="number" id="active-patients-previous" name="active-patients-previous" step="1" min="0" value="129" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Capacidad de Utilización -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Capacidad de Utilización</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="sessions-realized-op">Sesiones Realizadas</label>
+                            <input type="number" id="sessions-realized-op" name="sessions-realized-op" step="1" min="0" value="350" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="max-capacity-op">Capacidad Máxima de Sesiones</label>
+                            <input type="number" id="max-capacity-op" name="max-capacity-op" step="1" min="1" value="400" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos Históricos - Pacientes Activos -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Datos Históricos - Pacientes Activos por Semana</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="num-weeks-patients">Número de Semanas a Mostrar</label>
+                            <input type="number" id="num-weeks-patients" name="num-weeks-patients" step="1" min="2" max="12" value="4" required>
+                        </div>
+                    </div>
+                    
+                    <div id="weekly-patients-container" style="margin-top: 1rem;">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="patients-week-1">Semana 1</label>
+                                <input type="number" id="patients-week-1" name="patients-week-1" step="1" min="0" value="125" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="patients-week-2">Semana 2</label>
+                                <input type="number" id="patients-week-2" name="patients-week-2" step="1" min="0" value="128" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="patients-week-3">Semana 3</label>
+                                <input type="number" id="patients-week-3" name="patients-week-3" step="1" min="0" value="129" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="patients-week-4">Semana 4</label>
+                                <input type="number" id="patients-week-4" name="patients-week-4" step="1" min="0" value="134" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Datos Históricos - Capacidad de Utilización -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Datos Históricos - Capacidad de Utilización por Semana</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="num-weeks-capacity">Número de Semanas a Mostrar</label>
+                            <input type="number" id="num-weeks-capacity" name="num-weeks-capacity" step="1" min="2" max="12" value="4" required>
+                        </div>
+                    </div>
+                    
+                    <div id="weekly-capacity-container" style="margin-top: 1rem;">
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="capacity-week-1">Semana 1 (%)</label>
+                                <input type="number" id="capacity-week-1" name="capacity-week-1" step="0.1" min="0" max="100" value="82" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="capacity-week-2">Semana 2 (%)</label>
+                                <input type="number" id="capacity-week-2" name="capacity-week-2" step="0.1" min="0" max="100" value="85" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="capacity-week-3">Semana 3 (%)</label>
+                                <input type="number" id="capacity-week-3" name="capacity-week-3" step="0.1" min="0" max="100" value="87" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="capacity-week-4">Semana 4 (%)</label>
+                                <input type="number" id="capacity-week-4" name="capacity-week-4" step="0.1" min="0" max="100" value="88" required>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn btn-secondary" data-cancel="operational">Cerrar</button>
+                    <button type="button" class="btn btn-secondary" data-cancel="operational">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar y Actualizar</button>
                 </div>
             </form>
         </div>
     </div>
-    -->
 
     <!-- Modal 3: Patient Experience -->
     <div class="modal" id="modalPatient">
@@ -469,6 +627,18 @@
                         <div class="form-field">
                             <label for="puntualidad-muy-satisfecho">Muy Satisfecho</label>
                             <input type="number" id="puntualidad-muy-satisfecho" name="puntualidad-muy-satisfecho" step="1" min="0" value="8" required>
+                        </div>
+                    </div>
+
+                    <h3 class="form-section-title" style="margin-top: 2rem;">Retención de Pacientes</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="patients-current">Pacientes Activos Actuales</label>
+                            <input type="number" id="patients-current" name="patients-current" step="1" min="0" value="134" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="patients-end-month">Pacientes Activos Fin de Mes</label>
+                            <input type="number" id="patients-end-month" name="patients-end-month" step="1" min="0" value="130" required>
                         </div>
                     </div>
                 </div>

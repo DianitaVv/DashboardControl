@@ -19,12 +19,101 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize Tooltips
     initializeTooltips();
     
-    // Initialize Session Table Auto-calculation
-    initializeSessionTableCalc();
+    // Initialize Adverse Events Table Auto-calculation
+    initializeAdverseEventsTableCalc();
+    
+    // Initialize Dynamic Weeks Fields
+    initializeDynamicWeeks();
+    
+    // Initialize Dynamic Weeks for Operational Metrics
+    initializeDynamicWeeksOperational();
     
     // Initialize Inventory Table Auto-calculation
     initializeInventoryTableCalc();
 });
+
+// ========================================
+// ADVERSE EVENTS TABLE AUTO-CALCULATION
+// ========================================
+
+function initializeAdverseEventsTableCalc() {
+    const adverseInputs = [
+        'adverse-mon',
+        'adverse-tue',
+        'adverse-wed',
+        'adverse-thu',
+        'adverse-fri',
+        'adverse-sat'
+    ];
+    
+    const totalDisplay = document.getElementById('adverse-week-total');
+    
+    adverseInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', () => {
+                let total = 0;
+                adverseInputs.forEach(id => {
+                    const val = parseInt(document.getElementById(id).value) || 0;
+                    total += val;
+                });
+                if (totalDisplay) {
+                    totalDisplay.textContent = total;
+                }
+            });
+        }
+    });
+}
+
+// ========================================
+// DYNAMIC WEEKS FIELDS GENERATION
+// ========================================
+
+function initializeDynamicWeeks() {
+    const numWeeksInput = document.getElementById('num-weeks');
+    const container = document.getElementById('weekly-adverse-container');
+    
+    if (numWeeksInput && container) {
+        numWeeksInput.addEventListener('change', () => {
+            const numWeeks = parseInt(numWeeksInput.value) || 2;
+            generateWeekFields(numWeeks, container);
+        });
+    }
+}
+
+function generateWeekFields(numWeeks, container) {
+    // Clear existing fields
+    container.innerHTML = '';
+    
+    // Create grid container
+    const grid = document.createElement('div');
+    grid.className = 'form-grid';
+    
+    // Generate fields for each week
+    for (let i = 1; i <= numWeeks; i++) {
+        const field = document.createElement('div');
+        field.className = 'form-field';
+        
+        const label = document.createElement('label');
+        label.setAttribute('for', `adverse-week-${i}`);
+        label.textContent = `Semana ${i}`;
+        
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = `adverse-week-${i}`;
+        input.name = `adverse-week-${i}`;
+        input.step = '1';
+        input.min = '0';
+        input.value = i <= 2 ? (i === 1 ? '3' : '2') : '0';
+        input.required = true;
+        
+        field.appendChild(label);
+        field.appendChild(input);
+        grid.appendChild(field);
+    }
+    
+    container.appendChild(grid);
+}
 
 // ========================================
 // INVENTORY TABLE AUTO-CALCULATION
@@ -42,17 +131,21 @@ function initializeInventoryTableCalc() {
         const qtyInput = document.querySelector(`input[data-item="${item}"].inv-qty`);
         const priceInput = document.querySelector(`input[data-item="${item}"].inv-price`);
         
-        const updateTotal = () => {
-            const qty = parseFloat(qtyInput.value) || 0;
-            const price = parseFloat(priceInput.value) || 0;
-            const total = qty * price;
-            document.getElementById(`total-${item}`).textContent = 
-                '$' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            updateGrandTotal();
-        };
-        
-        qtyInput.addEventListener('input', updateTotal);
-        priceInput.addEventListener('input', updateTotal);
+        if (qtyInput && priceInput) {
+            const updateTotal = () => {
+                const qty = parseFloat(qtyInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const total = qty * price;
+                const totalEl = document.getElementById(`total-${item}`);
+                if (totalEl) {
+                    totalEl.textContent = '$' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                }
+                updateGrandTotal();
+            };
+            
+            qtyInput.addEventListener('input', updateTotal);
+            priceInput.addEventListener('input', updateTotal);
+        }
     });
 }
 
@@ -68,13 +161,17 @@ function updateGrandTotal() {
     items.forEach(item => {
         const qtyInput = document.querySelector(`input[data-item="${item}"].inv-qty`);
         const priceInput = document.querySelector(`input[data-item="${item}"].inv-price`);
-        const qty = parseFloat(qtyInput.value) || 0;
-        const price = parseFloat(priceInput.value) || 0;
-        grandTotal += (qty * price);
+        if (qtyInput && priceInput) {
+            const qty = parseFloat(qtyInput.value) || 0;
+            const price = parseFloat(priceInput.value) || 0;
+            grandTotal += (qty * price);
+        }
     });
     
-    document.getElementById('inventory-grand-total').textContent = 
-        '$' + grandTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const grandTotalEl = document.getElementById('inventory-grand-total');
+    if (grandTotalEl) {
+        grandTotalEl.textContent = '$' + grandTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
 }
 
 // ========================================
@@ -85,60 +182,28 @@ function initializeTooltips() {
     const tooltipIcons = document.querySelectorAll('.tooltip-icon');
     const tooltipContainer = document.getElementById('tooltipContainer');
     
-    tooltipIcons.forEach(icon => {
-        icon.addEventListener('mouseenter', (e) => {
-            const formula = icon.getAttribute('data-tooltip');
-            tooltipContainer.textContent = formula;
-            tooltipContainer.classList.add('active');
-            
-            // Position tooltip
-            const rect = icon.getBoundingClientRect();
-            tooltipContainer.style.left = rect.left + 'px';
-            tooltipContainer.style.top = (rect.bottom + 10) + 'px';
-        });
-        
-        icon.addEventListener('mouseleave', () => {
-            tooltipContainer.classList.remove('active');
-        });
-    });
-}
-
-// ========================================
-// SESSION TABLE AUTO-CALCULATION
-// ========================================
-
-function initializeSessionTableCalc() {
-    const sessionInputs = [
-        'sessions-mon',
-        'sessions-tue',
-        'sessions-wed',
-        'sessions-thu',
-        'sessions-fri',
-        'sessions-sat'
-    ];
-    
-    const totalDisplay = document.getElementById('sessions-week-total');
-    const week6Input = document.getElementById('week-6');
-    
-    sessionInputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        input.addEventListener('input', () => {
-            let total = 0;
-            sessionInputs.forEach(id => {
-                const val = parseInt(document.getElementById(id).value) || 0;
-                total += val;
+    if (tooltipContainer) {
+        tooltipIcons.forEach(icon => {
+            icon.addEventListener('mouseenter', (e) => {
+                const formula = icon.getAttribute('data-tooltip');
+                tooltipContainer.textContent = formula;
+                tooltipContainer.classList.add('active');
+                
+                // Position tooltip
+                const rect = icon.getBoundingClientRect();
+                tooltipContainer.style.left = rect.left + 'px';
+                tooltipContainer.style.top = (rect.bottom + 10) + 'px';
             });
-            totalDisplay.textContent = total;
-            // Update week-6 (current week) automatically
-            if (week6Input) {
-                week6Input.value = total;
-            }
+            
+            icon.addEventListener('mouseleave', () => {
+                tooltipContainer.classList.remove('active');
+            });
         });
-    });
+    }
 }
 
 // ========================================
-// MODAL CONTROLS (4 INDEPENDENT MODALS)
+// MODAL CONTROLS
 // ========================================
 
 function initializeModals() {
@@ -147,36 +212,43 @@ function initializeModals() {
     sections.forEach(section => {
         const modal = document.getElementById(`modal${capitalize(section)}`);
         const openBtn = document.querySelector(`button[data-section="${section}"]`);
-const closeBtn = document.querySelector(`button[data-close="${section}"]`);
-const cancelBtn = document.querySelector(`button[data-cancel="${section}"]`);
+        const closeBtn = document.querySelector(`button[data-close="${section}"]`);
+        const cancelBtn = document.querySelector(`button[data-cancel="${section}"]`);
         
-        // Open modal
-        openBtn.addEventListener('click', () => {
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-        });
-        
-        // Close modal functions
-        const closeModal = () => {
-            modal.classList.remove('active');
-            document.body.style.overflow = 'auto';
-        };
-        
-        if (closeBtn) {
-    closeBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        closeModal();
-    });
-}
-if (cancelBtn) {
-    cancelBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        closeModal();
-    });
-}
-        
-        // Close modal when clicking outside
-        
+        if (modal && openBtn) {
+            // Open modal
+            openBtn.addEventListener('click', () => {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // Close modal functions
+            const closeModal = () => {
+                modal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            };
+            
+            if (closeBtn) {
+                closeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    closeModal();
+                });
+            }
+            
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    closeModal();
+                });
+            }
+            
+            // Close modal when clicking outside
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        }
     });
     
     // Close any modal with ESC key
@@ -184,7 +256,7 @@ if (cancelBtn) {
         if (e.key === 'Escape') {
             sections.forEach(section => {
                 const modal = document.getElementById(`modal${capitalize(section)}`);
-                if (modal.classList.contains('active')) {
+                if (modal && modal.classList.contains('active')) {
                     modal.classList.remove('active');
                     document.body.style.overflow = 'auto';
                 }
@@ -200,218 +272,118 @@ if (cancelBtn) {
 function initializeFormHandlers() {
     // Clinical Quality Form
     const clinicalForm = document.getElementById('formClinical');
-    clinicalForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        updateClinicalQuality(new FormData(clinicalForm));
-    });
+    if (clinicalForm) {
+        clinicalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            updateClinicalQuality(new FormData(clinicalForm));
+        });
+    }
+    
+    // Operational Metrics Form
+    const operationalForm = document.getElementById('formOperational');
+    if (operationalForm) {
+        operationalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            updateOperationalMetrics(new FormData(operationalForm));
+        });
+    }
     
     // Patient Experience Form
     const patientForm = document.getElementById('formPatient');
-    patientForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        updatePatientExperience(new FormData(patientForm));
-    });
+    if (patientForm) {
+        patientForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            updatePatientExperience(new FormData(patientForm));
+        });
+    }
     
     // Financial Overview Form
     const financialForm = document.getElementById('formFinancial');
-    financialForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        updateFinancialOverview(new FormData(financialForm));
-    });
+    if (financialForm) {
+        financialForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            updateFinancialOverview(new FormData(financialForm));
+        });
+    }
 }
 
 // ========================================
-// CLINICAL QUALITY CALCULATIONS
+// CLINICAL QUALITY CALCULATIONS (UPDATED)
 // ========================================
 
 function updateClinicalQuality(formData) {
     const data = Object.fromEntries(formData.entries());
     
-    // Calculate sessions realized from table
-    const sessionsRealized = parseInt(data['sessions-mon']) + 
-                             parseInt(data['sessions-tue']) + 
-                             parseInt(data['sessions-wed']) + 
-                             parseInt(data['sessions-thu']) + 
-                             parseInt(data['sessions-fri']) + 
-                             parseInt(data['sessions-sat']);
+    // Get infection rate data
+    const infectionRate = parseFloat(data['infection-rate-value']);
+    const infectionGoal = parseFloat(data['infection-rate-goal']);
     
-    const sessionsProgrammed = parseInt(data['sessions-programmed']);
-    const sessionsCancelled = parseInt(data['sessions-cancelled']);
-    const maxCapacity = 72; // Fixed capacity
+    // Get adverse events by day
+    const adverseTotal = parseInt(data['adverse-mon']) + 
+                        parseInt(data['adverse-tue']) + 
+                        parseInt(data['adverse-wed']) + 
+                        parseInt(data['adverse-thu']) + 
+                        parseInt(data['adverse-fri']) + 
+                        parseInt(data['adverse-sat']);
     
-    // Calculate KPIs
-    const compliancePercentage = ((sessionsRealized / sessionsProgrammed) * 100).toFixed(1);
-    const incidentRate = sessionsProgrammed > 0 ? ((sessionsCancelled / sessionsProgrammed) * 100).toFixed(1) : 0;
-    const capacityUsed = ((sessionsRealized / maxCapacity) * 100).toFixed(1);
+    // Get alarms data
+    const alarmsTotal = parseInt(data['alarms-total']);
+    const alarmsResolvedPct = parseInt(data['alarms-resolved-pct']);
+    
+    // Get weekly adverse events for chart
+    const numWeeks = parseInt(data['num-weeks']) || 2;
+    const weeklyAdverse = [];
+    for (let i = 1; i <= numWeeks; i++) {
+        weeklyAdverse.push(parseInt(data[`adverse-week-${i}`]) || 0);
+    }
     
     // Update Display
-    document.getElementById('sessions-realized-display').textContent = sessionsRealized;
-    document.getElementById('sessions-vs-programmed').innerHTML = 
-        `vs Programadas: ${sessionsProgrammed} (${compliancePercentage}%)`;
+    const infectionRateEl = document.getElementById('infection-rate');
+    if (infectionRateEl) {
+        infectionRateEl.innerHTML = infectionRate.toFixed(2) + '<span class="metric-unit">%</span>';
+    }
     
-    document.getElementById('incident-rate').innerHTML = 
-        `${incidentRate}<span class="metric-unit">%</span>`;
-    document.getElementById('cancelled-sessions-display').textContent = 
-        `${sessionsCancelled} Canceladas`;
+    // Update infection rate comparison
+    const infectionComp = infectionRateEl ? infectionRateEl.nextElementSibling.nextElementSibling : null;
+    if (infectionComp) {
+        infectionComp.classList.remove('positive', 'negative');
+        if (infectionRate < infectionGoal) {
+            infectionComp.classList.add('positive');
+        } else {
+            infectionComp.classList.add('negative');
+        }
+        infectionComp.querySelector('span:last-child').textContent = `Meta Semanal: menor a ${infectionGoal.toFixed(2)}%`;
+    }
     
-    document.getElementById('capacity-used').innerHTML = 
-        `${capacityUsed}<span class="metric-unit">%</span>`;
+    // Update adverse events
+    const adverseEl = document.getElementById('adverse-events');
+    if (adverseEl) {
+        adverseEl.textContent = adverseTotal;
+    }
     
-    // Update comparison colors
-    updateComparisonColors(compliancePercentage, incidentRate);
+    // Update alarms
+    const alarmsEl = document.getElementById('treatment-alarms');
+    if (alarmsEl) {
+        alarmsEl.textContent = alarmsTotal;
+    }
     
-    // Update Weekly Sessions Chart
-    updateWeeklySessionsChart([
-        parseInt(data['week-1']),
-        parseInt(data['week-2']),
-        parseInt(data['week-3']),
-        parseInt(data['week-4']),
-        parseInt(data['week-5']),
-        parseInt(data['week-6'])
-    ]);
+    const alarmsStatus = alarmsEl ? alarmsEl.nextElementSibling : null;
+    if (alarmsStatus) {
+        alarmsStatus.querySelector('strong').textContent = `${alarmsResolvedPct}%`;
+    }
     
-    // Update Operational Metrics (auto-sync)
-    updateOperationalMetrics({
-        sessionsRealized,
-        sessionsProgrammed,
-        capacityUsed,
-        sessionsByDay: [
-            parseInt(data['sessions-mon']),
-            parseInt(data['sessions-tue']),
-            parseInt(data['sessions-wed']),
-            parseInt(data['sessions-thu']),
-            parseInt(data['sessions-fri']),
-            parseInt(data['sessions-sat'])
-        ],
-        weeklyData: [
-            parseInt(data['week-1']),
-            parseInt(data['week-2']),
-            parseInt(data['week-3']),
-            parseInt(data['week-4']),
-            parseInt(data['week-5']),
-            parseInt(data['week-6'])
-        ]
-    });
+    // Update Adverse Events Chart
+    updateAdverseEventsChart(weeklyAdverse);
     
     // Close modal
-    document.getElementById('modalClinical').classList.remove('active');
-    document.body.style.overflow = 'auto';
+    const modal = document.getElementById('modalClinical');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
     
     // Show success message
     showSuccessMessage('Datos de Calidad Clínica actualizados correctamente');
-}
-
-// ========================================
-// OPERATIONAL METRICS UPDATE (Auto-sync from Clinical Quality)
-// ========================================
-
-function updateOperationalMetrics(data) {
-    // Update Sesiones Esta Semana
-    document.getElementById('op-sessions-week').textContent = data.sessionsRealized;
-    document.getElementById('op-sessions-comparison').textContent = 
-        `vs Programadas: ${data.sessionsProgrammed}`;
-    
-    // Update Capacidad de Utilización
-    document.getElementById('op-capacity-percentage').textContent = data.capacityUsed;
-    
-    // Update gauge label based on capacity
-    const capacityLabel = document.getElementById('op-capacity-label');
-    if (data.capacityUsed >= 80) {
-        capacityLabel.textContent = 'Excelente';
-        capacityLabel.style.color = '#2ecc71';
-    } else if (data.capacityUsed >= 60) {
-        capacityLabel.textContent = 'Bueno';
-        capacityLabel.style.color = '#f39c12';
-    } else {
-        capacityLabel.textContent = 'Bajo';
-        capacityLabel.style.color = '#e74c3c';
-    }
-    
-    // Update Operational Capacity Gauge
-    updateOperationalGauge(parseFloat(data.capacityUsed));
-    
-    // Update Daily Sessions Chart
-    updateDailySessionsChart(data.sessionsByDay);
-    
-    // Update Capacity Trend Chart
-    updateCapacityTrendChart(data.weeklyData);
-}
-
-// ========================================
-// PATIENT EXPERIENCE CALCULATIONS
-// ========================================
-
-function updatePatientExperience(formData) {
-    const data = Object.fromEntries(formData.entries());
-    
-    // Parse data
-    const amabilidad = {
-        insatisfecho: parseInt(data['amabilidad-insatisfecho']),
-        satisfecho: parseInt(data['amabilidad-satisfecho']),
-        muySatisfecho: parseInt(data['amabilidad-muy-satisfecho'])
-    };
-    
-    const limpieza = {
-        insatisfecho: parseInt(data['limpieza-insatisfecho']),
-        satisfecho: parseInt(data['limpieza-satisfecho']),
-        muySatisfecho: parseInt(data['limpieza-muy-satisfecho'])
-    };
-    
-    const puntualidad = {
-        insatisfecho: parseInt(data['puntualidad-insatisfecho']),
-        satisfecho: parseInt(data['puntualidad-satisfecho']),
-        muySatisfecho: parseInt(data['puntualidad-muy-satisfecho'])
-    };
-    
-    // Calculate totals
-    const totalAmabilidad = amabilidad.insatisfecho + amabilidad.satisfecho + amabilidad.muySatisfecho;
-    const totalLimpieza = limpieza.insatisfecho + limpieza.satisfecho + limpieza.muySatisfecho;
-    const totalPuntualidad = puntualidad.insatisfecho + puntualidad.satisfecho + puntualidad.muySatisfecho;
-    
-    // Update display
-    document.getElementById('amabilidad-total').textContent = `Total: ${totalAmabilidad} encuestas`;
-    document.getElementById('limpieza-total').textContent = `Total: ${totalLimpieza} encuestas`;
-    document.getElementById('puntualidad-total').textContent = `Total: ${totalPuntualidad} encuestas`;
-    
-    // Update charts
-    updateSatisfactionChart('amabilidadChart', amabilidad, totalAmabilidad);
-    updateSatisfactionChart('limpiezaChart', limpieza, totalLimpieza);
-    updateSatisfactionChart('puntualidadChart', puntualidad, totalPuntualidad);
-    updateComparisonChart(amabilidad, limpieza, puntualidad, totalAmabilidad, totalLimpieza, totalPuntualidad);
-    
-    // Close modal
-    document.getElementById('modalPatient').classList.remove('active');
-    document.body.style.overflow = 'auto';
-    
-    // Show success message
-    showSuccessMessage('Datos de Experiencia del Paciente actualizados correctamente');
-}
-
-// ========================================
-// UPDATE COMPARISON COLORS
-// ========================================
-
-function updateComparisonColors(compliancePercentage, incidentRate) {
-    const complianceComp = document.getElementById('sessions-vs-programmed').parentElement;
-    const incidentComp = document.getElementById('cancelled-sessions-display').parentElement;
-    
-    // Update compliance color
-    complianceComp.classList.remove('positive', 'negative');
-    if (compliancePercentage >= 100) {
-        complianceComp.classList.add('positive');
-        complianceComp.querySelector('.arrow').textContent = '▲';
-    } else {
-        complianceComp.classList.add('negative');
-        complianceComp.querySelector('.arrow').textContent = '▼';
-    }
-    
-    // Update incident rate color
-    incidentComp.classList.remove('positive', 'negative');
-    if (incidentRate <= 5) {
-        incidentComp.classList.add('positive');
-    } else {
-        incidentComp.classList.add('negative');
-    }
 }
 
 // ========================================
@@ -419,7 +391,6 @@ function updateComparisonColors(compliancePercentage, incidentRate) {
 // ========================================
 
 function showSuccessMessage(message) {
-    // Create temporary success notification
     const notification = document.createElement('div');
     notification.style.cssText = `
         position: fixed;
@@ -447,64 +418,45 @@ function showSuccessMessage(message) {
 // CHARTS INITIALIZATION
 // ========================================
 
-let weeklySessionsChart = null;
+let adverseEventsChart = null;
 let amabilidadChart = null;
 let limpiezaChart = null;
 let puntualidadChart = null;
 let satisfactionComparisonChart = null;
 let operationalCapacityGauge = null;
-let dailySessionsChart = null;
-let capacityTrendChart = null;
+let activePatientsChart = null;
+let capacityUtilizationChart = null;
+let npsGauge = null;
 
 function initializeCharts() {
     Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
     Chart.defaults.color = '#7f8c8d';
     
-    initWeeklySessionsChart();
+    initAdverseEventsChart();
     initOperationalCharts();
     initSatisfactionCharts();
+    initNPSGauge();
     initRevenueCostChart();
 }
 
 // ========================================
-// OPERATIONAL METRICS CHARTS
+// ADVERSE EVENTS CHART (Clinical Quality)
 // ========================================
 
-function initOperationalCharts() {
-    // Operational Capacity Gauge
-    const gaugeCtx = document.getElementById('operationalCapacityGauge').getContext('2d');
-    operationalCapacityGauge = new Chart(gaugeCtx, {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [59.7, 40.3],
-                backgroundColor: ['#2ecc71', '#e1e8ed'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            cutout: '75%',
-            rotation: -90,
-            circumference: 180,
-            plugins: {
-                legend: { display: false },
-                tooltip: { enabled: false }
-            }
-        }
-    });
+function initAdverseEventsChart() {
+    const canvas = document.getElementById('adverseEventsChart');
+    if (!canvas) return;
     
-    // Daily Sessions Chart
-    const dailyCtx = document.getElementById('dailySessionsChart').getContext('2d');
-    dailySessionsChart = new Chart(dailyCtx, {
+    const ctx = canvas.getContext('2d');
+    
+    adverseEventsChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+            labels: ['Semana 1', 'Semana 2'],
             datasets: [{
-                label: 'Sesiones',
-                data: [12, 4, 7, 5, 8, 7],
-                backgroundColor: '#1c5985',
+                label: 'Eventos Adversos',
+                data: [3, 2],
+                backgroundColor: ['#e74c3c', '#e74c3c'],
                 borderRadius: 6,
                 borderSkipped: false
             }]
@@ -513,7 +465,9 @@ function initOperationalCharts() {
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: false
+                },
                 tooltip: {
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     padding: 12,
@@ -524,93 +478,173 @@ function initOperationalCharts() {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 20,
-                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
-                },
-                x: {
-                    grid: { display: false }
-                }
-            }
-        }
-    });
-    
-    // Capacity Trend Chart
-    const trendCtx = document.getElementById('capacityTrendChart').getContext('2d');
-    capacityTrendChart = new Chart(trendCtx, {
-        type: 'line',
-        data: {
-            labels: ['Sem -5', 'Sem -4', 'Sem -3', 'Sem -2', 'Sem -1', 'Actual'],
-            datasets: [{
-                label: 'Capacidad Utilizada',
-                data: [52.8, 55.6, 58.3, 56.9, 54.2, 59.7],
-                borderColor: '#1c5985',
-                backgroundColor: 'rgba(28, 89, 133, 0.1)',
-                borderWidth: 3,
-                tension: 0.4,
-                fill: true,
-                pointRadius: 5,
-                pointBackgroundColor: '#1c5985',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointHoverRadius: 7
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
-                    titleFont: { size: 14, weight: 'bold' },
-                    bodyFont: { size: 13 },
-                    callbacks: {
-                        label: function(context) {
-                            return 'Capacidad: ' + context.parsed.y.toFixed(1) + '%';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
                     ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
+                        stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
                     }
                 },
                 x: {
-                    grid: { display: false }
+                    grid: {
+                        display: false
+                    }
                 }
             }
         }
     });
 }
 
-function updateOperationalGauge(percentage) {
-    if (operationalCapacityGauge) {
-        operationalCapacityGauge.data.datasets[0].data = [percentage, 100 - percentage];
-        operationalCapacityGauge.update();
+function updateAdverseEventsChart(data) {
+    if (adverseEventsChart) {
+        const labels = data.map((_, i) => `Semana ${i + 1}`);
+        adverseEventsChart.data.labels = labels;
+        adverseEventsChart.data.datasets[0].data = data;
+        adverseEventsChart.update();
     }
 }
 
-function updateDailySessionsChart(data) {
-    if (dailySessionsChart) {
-        dailySessionsChart.data.datasets[0].data = data;
-        dailySessionsChart.update();
+// ========================================
+// OPERATIONAL METRICS CHARTS
+// ========================================
+
+function initOperationalCharts() {
+    // Operational Capacity Gauge
+    const gaugeCanvas = document.getElementById('operationalCapacityGauge');
+    if (gaugeCanvas) {
+        const gaugeCtx = gaugeCanvas.getContext('2d');
+        operationalCapacityGauge = new Chart(gaugeCtx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [88, 12],
+                    backgroundColor: ['#2ecc71', '#e1e8ed'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '75%',
+                rotation: -90,
+                circumference: 180,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: false }
+                }
+            }
+        });
+    }
+    
+    // Active Patients Chart
+    const activePatientsCanvas = document.getElementById('activePatientsChart');
+    if (activePatientsCanvas) {
+        const ctx = activePatientsCanvas.getContext('2d');
+        activePatientsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                datasets: [{
+                    label: 'Pacientes Activos',
+                    data: [125, 128, 129, 134],
+                    backgroundColor: '#1c5985',
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Capacity Utilization Chart
+    const capacityUtilCanvas = document.getElementById('capacityUtilizationChart');
+    if (capacityUtilCanvas) {
+        const ctx = capacityUtilCanvas.getContext('2d');
+        capacityUtilizationChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                datasets: [{
+                    label: 'Capacidad Utilizada',
+                    data: [82, 85, 87, 88],
+                    backgroundColor: '#1c5985',
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        callbacks: {
+                            label: function(context) {
+                                return 'Capacidad: ' + context.parsed.y.toFixed(1) + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
     }
 }
 
-function updateCapacityTrendChart(weeklyData) {
-    if (capacityTrendChart) {
-        // Calculate capacity percentages from weekly session data
-        const capacityPercentages = weeklyData.map(sessions => (sessions / 72 * 100).toFixed(1));
-        capacityTrendChart.data.datasets[0].data = capacityPercentages;
-        capacityTrendChart.update();
+function updateActivePatientsChart(data) {
+    if (activePatientsChart) {
+        const labels = data.map((_, i) => `Semana ${i + 1}`);
+        activePatientsChart.data.labels = labels;
+        activePatientsChart.data.datasets[0].data = data;
+        activePatientsChart.update();
+    }
+}
+
+function updateCapacityUtilizationChart(data) {
+    if (capacityUtilizationChart) {
+        const labels = data.map((_, i) => `Semana ${i + 1}`);
+        capacityUtilizationChart.data.labels = labels;
+        capacityUtilizationChart.data.datasets[0].data = data;
+        capacityUtilizationChart.update();
     }
 }
 
@@ -619,7 +653,6 @@ function updateCapacityTrendChart(weeklyData) {
 // ========================================
 
 function initSatisfactionCharts() {
-    // Initialize individual satisfaction charts
     amabilidadChart = createSatisfactionChart('amabilidadChart', {
         insatisfecho: 0,
         satisfecho: 2,
@@ -638,12 +671,14 @@ function initSatisfactionCharts() {
         muySatisfecho: 8
     }, 13);
     
-    // Initialize comparison chart
     initComparisonChart();
 }
 
 function createSatisfactionChart(canvasId, data, total) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return null;
+    
+    const ctx = canvas.getContext('2d');
     
     const percentages = {
         insatisfecho: total > 0 ? ((data.insatisfecho / total) * 100).toFixed(1) : 0,
@@ -715,7 +750,6 @@ function updateSatisfactionChart(chartVariable, data, total) {
     if (chart) {
         chart.data.datasets[0].data = [data.insatisfecho, data.satisfecho, data.muySatisfecho];
         
-        // Update tooltip percentages
         const percentages = {
             insatisfecho: total > 0 ? ((data.insatisfecho / total) * 100).toFixed(1) : 0,
             satisfecho: total > 0 ? ((data.satisfecho / total) * 100).toFixed(1) : 0,
@@ -735,7 +769,10 @@ function updateSatisfactionChart(chartVariable, data, total) {
 }
 
 function initComparisonChart() {
-    const ctx = document.getElementById('satisfactionComparisonChart').getContext('2d');
+    const canvas = document.getElementById('satisfactionComparisonChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
     
     satisfactionComparisonChart = new Chart(ctx, {
         type: 'bar',
@@ -838,207 +875,92 @@ function updateComparisonChart(amabilidad, limpieza, puntualidad, totalA, totalL
 }
 
 // ========================================
-// WEEKLY SESSIONS CHART (Clinical Quality)
+// PATIENT EXPERIENCE CALCULATIONS
 // ========================================
 
-function initWeeklySessionsChart() {
-    const ctx = document.getElementById('sessionsWeeklyChart').getContext('2d');
+function updatePatientExperience(formData) {
+    const data = Object.fromEntries(formData.entries());
     
-    weeklySessionsChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Sem -5', 'Sem -4', 'Sem -3', 'Sem -2', 'Sem -1', 'Actual'],
-            datasets: [{
-                label: 'Sesiones',
-                data: [38, 40, 42, 41, 39, 43],
-                backgroundColor: [
-                    '#1c5985',
-                    '#1c5985',
-                    '#1c5985',
-                    '#1c5985',
-                    '#1c5985',
-                    '#2ecc71'
-                ],
-                borderRadius: 6,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
-                    titleFont: { size: 14, weight: 'bold' },
-                    bodyFont: { size: 13 }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 72,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return value + ' sesiones';
-                        }
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
-            }
-        }
-    });
-}
-
-// Update weekly sessions chart with new data
-function updateWeeklySessionsChart(data) {
-    if (weeklySessionsChart) {
-        weeklySessionsChart.data.datasets[0].data = data;
-        weeklySessionsChart.update();
+    const amabilidad = {
+        insatisfecho: parseInt(data['amabilidad-insatisfecho']),
+        satisfecho: parseInt(data['amabilidad-satisfecho']),
+        muySatisfecho: parseInt(data['amabilidad-muy-satisfecho'])
+    };
+    
+    const limpieza = {
+        insatisfecho: parseInt(data['limpieza-insatisfecho']),
+        satisfecho: parseInt(data['limpieza-satisfecho']),
+        muySatisfecho: parseInt(data['limpieza-muy-satisfecho'])
+    };
+    
+    const puntualidad = {
+        insatisfecho: parseInt(data['puntualidad-insatisfecho']),
+        satisfecho: parseInt(data['puntualidad-satisfecho']),
+        muySatisfecho: parseInt(data['puntualidad-muy-satisfecho'])
+    };
+    
+    const totalAmabilidad = amabilidad.insatisfecho + amabilidad.satisfecho + amabilidad.muySatisfecho;
+    const totalLimpieza = limpieza.insatisfecho + limpieza.satisfecho + limpieza.muySatisfecho;
+    const totalPuntualidad = puntualidad.insatisfecho + puntualidad.satisfecho + puntualidad.muySatisfecho;
+    
+    // Calculate NPS (average of "Muy Satisfecho" percentages)
+    const pctAmabilidad = totalAmabilidad > 0 ? (amabilidad.muySatisfecho / totalAmabilidad) * 100 : 0;
+    const pctLimpieza = totalLimpieza > 0 ? (limpieza.muySatisfecho / totalLimpieza) * 100 : 0;
+    const pctPuntualidad = totalPuntualidad > 0 ? (puntualidad.muySatisfecho / totalPuntualidad) * 100 : 0;
+    const npsScore = Math.round((pctAmabilidad + pctLimpieza + pctPuntualidad) / 3);
+    
+    // Calculate Retention
+    const patientsCurrent = parseInt(data['patients-current']);
+    const patientsEndMonth = parseInt(data['patients-end-month']);
+    const retentionPct = patientsCurrent > 0 ? ((patientsEndMonth / patientsCurrent) * 100).toFixed(1) : 0;
+    
+    // Update NPS Display
+    const npsScoreEl = document.getElementById('nps-score');
+    if (npsScoreEl) {
+        npsScoreEl.textContent = npsScore;
     }
-}
-
-// ========================================
-// SESSIONS THIS WEEK CHART (Operational)
-// ========================================
-
-function initSessionsChart() {
-    const ctx = document.getElementById('sessionsChart').getContext('2d');
+    updateNPSGauge(npsScore);
     
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-            datasets: [{
-                label: 'Sesiones',
-                data: [52, 48, 55, 50, 60, 53, 32],
-                backgroundColor: [
-                    '#1c5985',
-                    '#1c5985',
-                    '#1c5985',
-                    '#1c5985',
-                    '#1c5985',
-                    '#1c5985',
-                    '#2ecc71'
-                ],
-                borderRadius: 6,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
-                    titleFont: { size: 14, weight: 'bold' },
-                    bodyFont: { size: 13 }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
-            }
-        }
-    });
-}
-
-// ========================================
-// SATISFACTION TREND (NPS) CHART
-// ========================================
-
-function initSatisfactionTrendChart() {
-    const ctx = document.getElementById('satisfactionTrendChart').getContext('2d');
+    // Update Retention Display
+    const retentionEl = document.getElementById('patient-retention');
+    if (retentionEl) {
+        retentionEl.innerHTML = retentionPct + '<span class="metric-unit">%</span>';
+    }
     
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Semana 1', 'Semana 2', 'Semana 3'],
-            datasets: [
-                {
-                    label: 'Promotores',
-                    data: [65, 70, 68],
-                    backgroundColor: '#2ecc71',
-                    borderRadius: 4
-                },
-                {
-                    label: 'Pasivos',
-                    data: [20, 18, 20],
-                    backgroundColor: '#f39c12',
-                    borderRadius: 4
-                },
-                {
-                    label: 'Detractores',
-                    data: [15, 12, 12],
-                    backgroundColor: '#e74c3c',
-                    borderRadius: 4
-                }
-            ]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: {
-                    display: true,
-                    position: 'top',
-                    labels: {
-                        boxWidth: 15,
-                        padding: 15
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
-                    titleFont: { size: 14, weight: 'bold' },
-                    bodyFont: { size: 13 }
-                }
-            },
-            scales: {
-                x: {
-                    stacked: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    },
-                    ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        }
-                    }
-                },
-                y: {
-                    stacked: true,
-                    grid: {
-                        display: false
-                    }
-                }
-            }
+    // Update retention comparison color
+    const retentionComp = retentionEl ? retentionEl.nextElementSibling : null;
+    if (retentionComp) {
+        retentionComp.classList.remove('positive', 'negative');
+        if (retentionPct >= 90) {
+            retentionComp.classList.add('positive');
+        } else {
+            retentionComp.classList.add('negative');
         }
-    });
+    }
+    
+    // Update category totals
+    const amabilidadTotal = document.getElementById('amabilidad-total');
+    const limpiezaTotal = document.getElementById('limpieza-total');
+    const puntualidadTotal = document.getElementById('puntualidad-total');
+    
+    if (amabilidadTotal) amabilidadTotal.textContent = `Total: ${totalAmabilidad} encuestas`;
+    if (limpiezaTotal) limpiezaTotal.textContent = `Total: ${totalLimpieza} encuestas`;
+    if (puntualidadTotal) puntualidadTotal.textContent = `Total: ${totalPuntualidad} encuestas`;
+    
+    // Update charts
+    updateSatisfactionChart('amabilidadChart', amabilidad, totalAmabilidad);
+    updateSatisfactionChart('limpiezaChart', limpieza, totalLimpieza);
+    updateSatisfactionChart('puntualidadChart', puntualidad, totalPuntualidad);
+    updateComparisonChart(amabilidad, limpieza, puntualidad, totalAmabilidad, totalLimpieza, totalPuntualidad);
+    
+    // Close modal
+    const modal = document.getElementById('modalPatient');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+    
+    showSuccessMessage('Datos de Experiencia del Paciente actualizados correctamente');
 }
 
 // ========================================
@@ -1046,12 +968,15 @@ function initSatisfactionTrendChart() {
 // ========================================
 
 function initRevenueCostChart() {
-    const ctx = document.getElementById('revenueCostChart').getContext('2d');
+    const canvas = document.getElementById('revenueCostChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
     
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Jun', 'Feb', 'Mar', 'Abr', 'May'],
+            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May'],
             datasets: [
                 {
                     label: 'Ingresos',
@@ -1131,132 +1056,21 @@ function initRevenueCostChart() {
 }
 
 // ========================================
-// CAPACITY GAUGE
-// ========================================
-
-function initCapacityGauge() {
-    const ctx = document.getElementById('capacityGauge').getContext('2d');
-    
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [88, 12],
-                backgroundColor: [
-                    '#2ecc71',
-                    '#e1e8ed'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            cutout: '75%',
-            rotation: -90,
-            circumference: 180,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    enabled: false
-                }
-            }
-        }
-    });
-}
-
-// ========================================
-// NPS GAUGE
-// ========================================
-
-function initNPSGauge() {
-    const ctx = document.getElementById('npsGauge').getContext('2d');
-    
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            datasets: [{
-                data: [87, 13],
-                backgroundColor: [
-                    '#2ecc71',
-                    '#e1e8ed'
-                ],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            cutout: '75%',
-            rotation: -90,
-            circumference: 180,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    enabled: false
-                }
-            }
-        }
-    });
-}
-
-// ========================================
-// UTILITY FUNCTIONS
-// ========================================
-
-function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function formatCurrency(value) {
-    return new Intl.NumberFormat('es-MX', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(value);
-}
-
-function formatPercentage(value, decimals = 0) {
-    return value.toFixed(decimals) + '%';
-}
-
-function formatLargeNumber(value) {
-    if (value >= 1000) {
-        return '$' + (value / 1000).toFixed(0) + 'K';
-    }
-    return '$' + value;
-}
-
-console.log('Phase 2 Complete: Clinical Quality calculations implemented');
-console.log('Remaining: Operational, Patient Experience, Financial calculations');
-
-// ========================================
 // FINANCIAL OVERVIEW CALCULATIONS
 // ========================================
 
 function updateFinancialOverview(formData) {
     const data = Object.fromEntries(formData.entries());
     
-    // Get sessions from Clinical Quality (already saved)
-    const sessionsRealized = parseInt(document.getElementById('sessions-realized-display').textContent) || 43;
-    
-    // Parse financial data
     const totalRevenue = parseFloat(data['total-revenue-fin']);
     const costPerSession = parseFloat(data['cost-per-session']);
     const targetRevenue = parseFloat(data['target-revenue-fin']);
     
-    // Parse operational expenses
     const payrollOps = parseFloat(data['payroll-operations']);
     const payrollAdmin = parseFloat(data['payroll-admin']);
     const generalServices = parseFloat(data['general-services']);
     const insurancePolicies = parseFloat(data['insurance-policies']);
     
-    // Calculate inventory cost from table
     let inventoryCost = 0;
     const items = [
         'filtro', 'heparina', 'acido-potasio', 'bicarbonato', 'lineas',
@@ -1268,61 +1082,361 @@ function updateFinancialOverview(formData) {
     items.forEach(item => {
         const qtyInput = document.querySelector(`input[data-item="${item}"].inv-qty`);
         const priceInput = document.querySelector(`input[data-item="${item}"].inv-price`);
-        const qty = parseFloat(qtyInput.value) || 0;
-        const price = parseFloat(priceInput.value) || 0;
-        inventoryCost += (qty * price);
+        if (qtyInput && priceInput) {
+            const qty = parseFloat(qtyInput.value) || 0;
+            const price = parseFloat(priceInput.value) || 0;
+            inventoryCost += (qty * price);
+        }
     });
     
-    // Calculate KPIs
-    const revenuePerSession = (totalRevenue / sessionsRealized).toFixed(2);
+    const adverseTotal = parseInt(document.getElementById('adverse-events').textContent) || 43;
+    const revenuePerSession = (totalRevenue / adverseTotal).toFixed(2);
     const totalCosts = inventoryCost + payrollOps + payrollAdmin + generalServices + insurancePolicies;
     const netProfit = totalRevenue - totalCosts;
     const profitMargin = ((netProfit / totalRevenue) * 100).toFixed(1);
     
-    // Update Display
-    document.getElementById('revenue-session').textContent = '$' + formatNumber(revenuePerSession);
-    document.getElementById('cost-session').textContent = '$' + formatNumber(costPerSession);
-    document.getElementById('weekly-revenue').textContent = '$' + formatNumber(totalRevenue);
-    document.getElementById('net-profit').textContent = '$' + formatNumber(netProfit);
-    document.getElementById('profit-margin').innerHTML = profitMargin + '<span class="metric-unit">%</span>';
-    document.getElementById('inventory-cost').textContent = '$' + formatNumber(inventoryCost);
+    const revenueSessionEl = document.getElementById('revenue-session');
+    const costSessionEl = document.getElementById('cost-session');
+    const weeklyRevenueEl = document.getElementById('weekly-revenue');
+    const netProfitEl = document.getElementById('net-profit');
+    const profitMarginEl = document.getElementById('profit-margin');
+    const inventoryCostEl = document.getElementById('inventory-cost');
     
-    // Update comparisons
+    if (revenueSessionEl) revenueSessionEl.textContent = '$' + formatNumber(revenuePerSession);
+    if (costSessionEl) costSessionEl.textContent = '$' + formatNumber(costPerSession);
+    if (weeklyRevenueEl) weeklyRevenueEl.textContent = '$' + formatNumber(totalRevenue);
+    if (netProfitEl) netProfitEl.textContent = '$' + formatNumber(netProfit);
+    if (profitMarginEl) profitMarginEl.innerHTML = profitMargin + '<span class="metric-unit">%</span>';
+    if (inventoryCostEl) inventoryCostEl.textContent = '$' + formatNumber(inventoryCost);
+    
     const revenueComp = document.getElementById('weekly-revenue-comparison');
-    const targetDiff = totalRevenue - targetRevenue;
-    if (targetDiff >= 0) {
-        revenueComp.parentElement.classList.add('positive');
-        revenueComp.parentElement.classList.remove('negative');
-        revenueComp.innerHTML = '<span class="arrow">▲</span><span>vs Meta: $' + formatNumber(targetRevenue) + '</span>';
-    } else {
-        revenueComp.parentElement.classList.add('negative');
-        revenueComp.parentElement.classList.remove('positive');
-        revenueComp.innerHTML = '<span class="arrow">▼</span><span>vs Meta: $' + formatNumber(targetRevenue) + '</span>';
+    if (revenueComp) {
+        const targetDiff = totalRevenue - targetRevenue;
+        if (targetDiff >= 0) {
+            revenueComp.parentElement.classList.add('positive');
+            revenueComp.parentElement.classList.remove('negative');
+            revenueComp.innerHTML = '<span class="arrow">▲</span><span>vs Meta: $' + formatNumber(targetRevenue) + '</span>';
+        } else {
+            revenueComp.parentElement.classList.add('negative');
+            revenueComp.parentElement.classList.remove('positive');
+            revenueComp.innerHTML = '<span class="arrow">▼</span><span>vs Meta: $' + formatNumber(targetRevenue) + '</span>';
+        }
     }
     
-    // Update profit comparison
-    const profitComp = document.getElementById('net-profit').nextElementSibling;
-    if (netProfit >= 0) {
-        profitComp.classList.add('positive');
-        profitComp.classList.remove('negative');
-        profitComp.querySelector('.arrow').textContent = '▲';
-    } else {
-        profitComp.classList.add('negative');
-        profitComp.classList.remove('positive');
-        profitComp.querySelector('.arrow').textContent = '▼';
+    if (netProfitEl) {
+        const profitComp = netProfitEl.nextElementSibling;
+        if (profitComp) {
+            if (netProfit >= 0) {
+                profitComp.classList.add('positive');
+                profitComp.classList.remove('negative');
+                const arrow = profitComp.querySelector('.arrow');
+                if (arrow) arrow.textContent = '▲';
+            } else {
+                profitComp.classList.add('negative');
+                profitComp.classList.remove('positive');
+                const arrow = profitComp.querySelector('.arrow');
+                if (arrow) arrow.textContent = '▼';
+            }
+        }
     }
     
-    // Close modal
-    document.getElementById('modalFinancial').classList.remove('active');
-    document.body.style.overflow = 'auto';
+    const modal = document.getElementById('modalFinancial');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
     
-    // Show success message
     showSuccessMessage('Datos de Panorama Financiero actualizados correctamente');
 }
 
-// Format number with commas
+// ========================================
+// UTILITY FUNCTIONS
+// ========================================
+
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 function formatNumber(num) {
     return parseFloat(num).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 console.log('Phase 2 Complete: All 4 quadrants functional!');
+
+// ========================================
+// NPS GAUGE (Patient Experience)
+// ========================================
+
+function initNPSGauge() {
+    const canvas = document.getElementById('npsGauge');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    npsGauge = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [87, 13],
+                backgroundColor: ['#2ecc71', '#e1e8ed'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '75%',
+            rotation: -90,
+            circumference: 180,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+}
+
+function updateNPSGauge(percentage) {
+    if (npsGauge) {
+        npsGauge.data.datasets[0].data = [percentage, 100 - percentage];
+        npsGauge.update();
+    }
+    
+    // Update NPS label
+    const npsLabel = document.getElementById('nps-label');
+    if (npsLabel) {
+        if (percentage >= 80) {
+            npsLabel.textContent = 'Excelente';
+            npsLabel.style.color = '#2ecc71';
+        } else if (percentage >= 60) {
+            npsLabel.textContent = 'Bueno';
+            npsLabel.style.color = '#f39c12';
+        } else {
+            npsLabel.textContent = 'Regular';
+            npsLabel.style.color = '#e74c3c';
+        }
+    }
+}
+
+// ========================================
+// DYNAMIC WEEKS FIELDS FOR OPERATIONAL METRICS
+// ========================================
+
+function initializeDynamicWeeksOperational() {
+    // For Patients Active
+    const numWeeksPatientsInput = document.getElementById('num-weeks-patients');
+    const patientsContainer = document.getElementById('weekly-patients-container');
+    
+    if (numWeeksPatientsInput && patientsContainer) {
+        numWeeksPatientsInput.addEventListener('change', () => {
+            const numWeeks = parseInt(numWeeksPatientsInput.value) || 2;
+            generatePatientsWeekFields(numWeeks, patientsContainer);
+        });
+    }
+    
+    // For Capacity Utilization
+    const numWeeksCapacityInput = document.getElementById('num-weeks-capacity');
+    const capacityContainer = document.getElementById('weekly-capacity-container');
+    
+    if (numWeeksCapacityInput && capacityContainer) {
+        numWeeksCapacityInput.addEventListener('change', () => {
+            const numWeeks = parseInt(numWeeksCapacityInput.value) || 2;
+            generateCapacityWeekFields(numWeeks, capacityContainer);
+        });
+    }
+}
+
+function generatePatientsWeekFields(numWeeks, container) {
+    container.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'form-grid';
+    
+    for (let i = 1; i <= numWeeks; i++) {
+        const field = document.createElement('div');
+        field.className = 'form-field';
+        
+        const label = document.createElement('label');
+        label.setAttribute('for', `patients-week-${i}`);
+        label.textContent = `Semana ${i}`;
+        
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = `patients-week-${i}`;
+        input.name = `patients-week-${i}`;
+        input.step = '1';
+        input.min = '0';
+        input.value = i <= 4 ? (120 + i * 3) : '0';
+        input.required = true;
+        
+        field.appendChild(label);
+        field.appendChild(input);
+        grid.appendChild(field);
+    }
+    
+    container.appendChild(grid);
+}
+
+function generateCapacityWeekFields(numWeeks, container) {
+    container.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'form-grid';
+    
+    for (let i = 1; i <= numWeeks; i++) {
+        const field = document.createElement('div');
+        field.className = 'form-field';
+        
+        const label = document.createElement('label');
+        label.setAttribute('for', `capacity-week-${i}`);
+        label.textContent = `Semana ${i} (%)`;
+        
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = `capacity-week-${i}`;
+        input.name = `capacity-week-${i}`;
+        input.step = '0.1';
+        input.min = '0';
+        input.max = '100';
+        input.value = i <= 4 ? (80 + i * 2) : '0';
+        input.required = true;
+        
+        field.appendChild(label);
+        field.appendChild(input);
+        grid.appendChild(field);
+    }
+    
+    container.appendChild(grid);
+}
+
+// ========================================
+// OPERATIONAL METRICS CALCULATIONS
+// ========================================
+
+function updateOperationalMetrics(formData) {
+    const data = Object.fromEntries(formData.entries());
+    
+    // Calculate Machine Utilization
+    const hoursTreatment = parseFloat(data['hours-treatment']);
+    const hoursAvailable = parseFloat(data['hours-available']);
+    const machineUtilTarget = parseFloat(data['machine-util-target']);
+    const machineUtil = hoursAvailable > 0 ? ((hoursTreatment / hoursAvailable) * 100).toFixed(1) : 0;
+    
+    // Get Cancellations
+    const cancellations = parseInt(data['cancellations-count']);
+    
+    // Get Active Patients
+    const activeCurrent = parseInt(data['active-patients-current']);
+    const activePrevious = parseInt(data['active-patients-previous']);
+    const activeDiff = activeCurrent - activePrevious;
+    
+    // Calculate Capacity Utilization
+    const sessionsRealized = parseInt(data['sessions-realized-op']);
+    const maxCapacity = parseInt(data['max-capacity-op']);
+    const capacityUtil = maxCapacity > 0 ? ((sessionsRealized / maxCapacity) * 100).toFixed(1) : 0;
+    
+    // Get historical data
+    const numWeeksPatients = parseInt(data['num-weeks-patients']) || 4;
+    const weeklyPatients = [];
+    for (let i = 1; i <= numWeeksPatients; i++) {
+        weeklyPatients.push(parseInt(data[`patients-week-${i}`]) || 0);
+    }
+    
+    const numWeeksCapacity = parseInt(data['num-weeks-capacity']) || 4;
+    const weeklyCapacity = [];
+    for (let i = 1; i <= numWeeksCapacity; i++) {
+        weeklyCapacity.push(parseFloat(data[`capacity-week-${i}`]) || 0);
+    }
+    
+    // Update Display - Machine Utilization
+    const machineUtilEl = document.getElementById('machine-utilization');
+    if (machineUtilEl) {
+        machineUtilEl.innerHTML = machineUtil + '<span class="metric-unit">%</span>';
+    }
+    
+    const machineUtilComp = document.getElementById('machine-util-comparison');
+    if (machineUtilComp) {
+        machineUtilComp.textContent = `vs Meta: ${machineUtilTarget}%`;
+        const compEl = machineUtilComp.parentElement;
+        compEl.classList.remove('positive', 'negative');
+        if (parseFloat(machineUtil) >= machineUtilTarget) {
+            compEl.classList.add('positive');
+            const arrow = compEl.querySelector('.arrow');
+            if (arrow) arrow.textContent = '▲';
+        } else {
+            compEl.classList.add('negative');
+            const arrow = compEl.querySelector('.arrow');
+            if (arrow) arrow.textContent = '▼';
+        }
+    }
+    
+    // Update Cancellations
+    const cancellationsEl = document.getElementById('cancellations');
+    if (cancellationsEl) {
+        cancellationsEl.textContent = cancellations;
+    }
+    
+    // Update Active Patients
+    const activePatientsEl = document.getElementById('active-patients-op');
+    if (activePatientsEl) {
+        activePatientsEl.textContent = activeCurrent;
+    }
+    
+    const activeChangeEl = document.getElementById('active-patients-change');
+    if (activeChangeEl) {
+        const sign = activeDiff >= 0 ? '+' : '';
+        activeChangeEl.textContent = `${sign}${activeDiff} Esta Semana`;
+        const compEl = activeChangeEl.parentElement;
+        compEl.classList.remove('positive', 'negative');
+        if (activeDiff >= 0) {
+            compEl.classList.add('positive');
+            const arrow = compEl.querySelector('.arrow');
+            if (arrow) arrow.textContent = '▲';
+        } else {
+            compEl.classList.add('negative');
+            const arrow = compEl.querySelector('.arrow');
+            if (arrow) arrow.textContent = '▼';
+        }
+    }
+    
+    // Update Capacity Gauge
+    const capacityPctEl = document.getElementById('op-capacity-percentage');
+    if (capacityPctEl) {
+        capacityPctEl.textContent = capacityUtil;
+    }
+    
+    const capacityLabel = document.getElementById('op-capacity-label');
+    if (capacityLabel) {
+        if (capacityUtil >= 80) {
+            capacityLabel.textContent = 'Excelente';
+            capacityLabel.style.color = '#2ecc71';
+        } else if (capacityUtil >= 60) {
+            capacityLabel.textContent = 'Bueno';
+            capacityLabel.style.color = '#f39c12';
+        } else {
+            capacityLabel.textContent = 'Bajo';
+            capacityLabel.style.color = '#e74c3c';
+        }
+    }
+    
+    // Update Operational Capacity Gauge
+    updateOperationalGauge(parseFloat(capacityUtil));
+    
+    // Update Charts
+    updateActivePatientsChart(weeklyPatients);
+    updateCapacityUtilizationChart(weeklyCapacity);
+    
+    // Close modal
+    const modal = document.getElementById('modalOperational');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+    
+    showSuccessMessage('Datos de Métricas Operacionales actualizados correctamente');
+}
+
+function updateOperationalGauge(percentage) {
+    if (operationalCapacityGauge) {
+        operationalCapacityGauge.data.datasets[0].data = [percentage, 100 - percentage];
+        operationalCapacityGauge.update();
+    }
+}
