@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize Dynamic Weeks for Operational Metrics
     initializeDynamicWeeksOperational();
     
-    // Initialize Inventory Table Auto-calculation
-    initializeInventoryTableCalc();
+    // Initialize Dynamic Weeks for Financial Overview
+    initializeDynamicWeeksFinancial();
 });
 
 // ========================================
@@ -116,63 +116,10 @@ function generateWeekFields(numWeeks, container) {
 }
 
 // ========================================
-// INVENTORY TABLE AUTO-CALCULATION
+// INVENTORY TABLE AUTO-CALCULATION (REMOVED - NOT USED)
 // ========================================
 
-function initializeInventoryTableCalc() {
-    const items = [
-        'filtro', 'heparina', 'acido-potasio', 'bicarbonato', 'lineas',
-        'kit-cateter', 'solucion-fisio', 'acido-citrico', 'clorhexedina',
-        'normogotero', 'jeringa-10', 'aguja-arterial', 'aguja-venosa',
-        'aguja-hipo', 'kit-fistula', 'jabon-clorhex'
-    ];
-    
-    items.forEach(item => {
-        const qtyInput = document.querySelector(`input[data-item="${item}"].inv-qty`);
-        const priceInput = document.querySelector(`input[data-item="${item}"].inv-price`);
-        
-        if (qtyInput && priceInput) {
-            const updateTotal = () => {
-                const qty = parseFloat(qtyInput.value) || 0;
-                const price = parseFloat(priceInput.value) || 0;
-                const total = qty * price;
-                const totalEl = document.getElementById(`total-${item}`);
-                if (totalEl) {
-                    totalEl.textContent = '$' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                }
-                updateGrandTotal();
-            };
-            
-            qtyInput.addEventListener('input', updateTotal);
-            priceInput.addEventListener('input', updateTotal);
-        }
-    });
-}
-
-function updateGrandTotal() {
-    const items = [
-        'filtro', 'heparina', 'acido-potasio', 'bicarbonato', 'lineas',
-        'kit-cateter', 'solucion-fisio', 'acido-citrico', 'clorhexedina',
-        'normogotero', 'jeringa-10', 'aguja-arterial', 'aguja-venosa',
-        'aguja-hipo', 'kit-fistula', 'jabon-clorhex'
-    ];
-    
-    let grandTotal = 0;
-    items.forEach(item => {
-        const qtyInput = document.querySelector(`input[data-item="${item}"].inv-qty`);
-        const priceInput = document.querySelector(`input[data-item="${item}"].inv-price`);
-        if (qtyInput && priceInput) {
-            const qty = parseFloat(qtyInput.value) || 0;
-            const price = parseFloat(priceInput.value) || 0;
-            grandTotal += (qty * price);
-        }
-    });
-    
-    const grandTotalEl = document.getElementById('inventory-grand-total');
-    if (grandTotalEl) {
-        grandTotalEl.textContent = '$' + grandTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    }
-}
+// Function removed - inventory table eliminated from Financial Overview
 
 // ========================================
 // TOOLTIP SYSTEM
@@ -326,6 +273,19 @@ function updateClinicalQuality(formData) {
                         parseInt(data['adverse-fri']) + 
                         parseInt(data['adverse-sat']);
     
+    // Get days with events
+    const daysWithEvents = [];
+    const dayNames = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const dayKeys = ['adverse-mon', 'adverse-tue', 'adverse-wed', 'adverse-thu', 'adverse-fri', 'adverse-sat'];
+    
+    dayKeys.forEach((key, index) => {
+        if (parseInt(data[key]) > 0) {
+            daysWithEvents.push(dayNames[index]);
+        }
+    });
+    
+    const daysText = daysWithEvents.length > 0 ? daysWithEvents.join(', ') : 'Ninguno';
+    
     // Get alarms data
     const alarmsTotal = parseInt(data['alarms-total']);
     const alarmsResolvedPct = parseInt(data['alarms-resolved-pct']);
@@ -359,6 +319,12 @@ function updateClinicalQuality(formData) {
     const adverseEl = document.getElementById('adverse-events');
     if (adverseEl) {
         adverseEl.textContent = adverseTotal;
+    }
+    
+    // Update adverse events days
+    const adverseDaysEl = document.getElementById('adverse-events-days');
+    if (adverseDaysEl) {
+        adverseDaysEl.textContent = daysText;
     }
     
     // Update alarms
@@ -427,6 +393,8 @@ let operationalCapacityGauge = null;
 let activePatientsChart = null;
 let capacityUtilizationChart = null;
 let npsGauge = null;
+let revenueCostChart = null;
+let netProfitChart = null;
 
 function initializeCharts() {
     Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
@@ -437,6 +405,7 @@ function initializeCharts() {
     initSatisfactionCharts();
     initNPSGauge();
     initRevenueCostChart();
+    initNetProfitChart();
 }
 
 // ========================================
@@ -973,10 +942,10 @@ function initRevenueCostChart() {
     
     const ctx = canvas.getContext('2d');
     
-    new Chart(ctx, {
+    revenueCostChart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May'],
+            labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5'],
             datasets: [
                 {
                     label: 'Ingresos',
@@ -1055,6 +1024,82 @@ function initRevenueCostChart() {
     });
 }
 
+function updateRevenueCostChart(revenueData, costData) {
+    if (revenueCostChart) {
+        const labels = revenueData.map((_, i) => `Semana ${i + 1}`);
+        revenueCostChart.data.labels = labels;
+        revenueCostChart.data.datasets[0].data = revenueData;
+        revenueCostChart.data.datasets[1].data = costData;
+        revenueCostChart.update();
+    }
+}
+
+// ========================================
+// NET PROFIT CHART
+// ========================================
+
+function initNetProfitChart() {
+    const canvas = document.getElementById('netProfitChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    netProfitChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5'],
+            datasets: [{
+                label: 'Utilidad Neta',
+                data: [80, 90, 85, 95, 100],
+                backgroundColor: '#2ecc71',
+                borderRadius: 6,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 13 },
+                    callbacks: {
+                        label: function(context) {
+                            return 'Utilidad: $' + context.parsed.y + 'K';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value + 'K';
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+function updateNetProfitChart(data) {
+    if (netProfitChart) {
+        const labels = data.map((_, i) => `Semana ${i + 1}`);
+        netProfitChart.data.labels = labels;
+        netProfitChart.data.datasets[0].data = data;
+        netProfitChart.update();
+    }
+}
+
 // ========================================
 // FINANCIAL OVERVIEW CALCULATIONS
 // ========================================
@@ -1062,84 +1107,116 @@ function initRevenueCostChart() {
 function updateFinancialOverview(formData) {
     const data = Object.fromEntries(formData.entries());
     
-    const totalRevenue = parseFloat(data['total-revenue-fin']);
-    const costPerSession = parseFloat(data['cost-per-session']);
+    // Get main data
+    const publicCost = parseFloat(data['public-cost']);
+    const publicCostPrevious = parseFloat(data['public-cost-previous']);
+    const costPerSession = parseFloat(data['cost-per-session-fin']);
+    const sessionsWeek = parseInt(data['sessions-week-fin']);
     const targetRevenue = parseFloat(data['target-revenue-fin']);
     
-    const payrollOps = parseFloat(data['payroll-operations']);
-    const payrollAdmin = parseFloat(data['payroll-admin']);
-    const generalServices = parseFloat(data['general-services']);
-    const insurancePolicies = parseFloat(data['insurance-policies']);
+    // Calculate KPIs
+    const weeklyRevenue = publicCost * sessionsWeek;
+    const weeklyCosts = costPerSession * sessionsWeek;
+    const netProfit = weeklyRevenue - weeklyCosts;
+    const profitMargin = publicCost > 0 ? ((costPerSession / publicCost) * 100).toFixed(1) : 0;
     
-    let inventoryCost = 0;
-    const items = [
-        'filtro', 'heparina', 'acido-potasio', 'bicarbonato', 'lineas',
-        'kit-cateter', 'solucion-fisio', 'acido-citrico', 'clorhexedina',
-        'normogotero', 'jeringa-10', 'aguja-arterial', 'aguja-venosa',
-        'aguja-hipo', 'kit-fistula', 'jabon-clorhex'
-    ];
+    // Get historical data
+    const numWeeksRevenue = parseInt(data['num-weeks-revenue']) || 5;
+    const revenueData = [];
+    const costData = [];
+    for (let i = 1; i <= numWeeksRevenue; i++) {
+        revenueData.push(parseInt(data[`revenue-week-${i}`]) || 0);
+        costData.push(parseInt(data[`cost-week-${i}`]) || 0);
+    }
     
-    items.forEach(item => {
-        const qtyInput = document.querySelector(`input[data-item="${item}"].inv-qty`);
-        const priceInput = document.querySelector(`input[data-item="${item}"].inv-price`);
-        if (qtyInput && priceInput) {
-            const qty = parseFloat(qtyInput.value) || 0;
-            const price = parseFloat(priceInput.value) || 0;
-            inventoryCost += (qty * price);
-        }
-    });
+    const numWeeksProfit = parseInt(data['num-weeks-profit']) || 5;
+    const profitData = [];
+    for (let i = 1; i <= numWeeksProfit; i++) {
+        profitData.push(parseInt(data[`profit-week-${i}`]) || 0);
+    }
     
-    const adverseTotal = parseInt(document.getElementById('adverse-events').textContent) || 43;
-    const revenuePerSession = (totalRevenue / adverseTotal).toFixed(2);
-    const totalCosts = inventoryCost + payrollOps + payrollAdmin + generalServices + insurancePolicies;
-    const netProfit = totalRevenue - totalCosts;
-    const profitMargin = ((netProfit / totalRevenue) * 100).toFixed(1);
-    
+    // Update Display - Costo al Público
     const revenueSessionEl = document.getElementById('revenue-session');
-    const costSessionEl = document.getElementById('cost-session');
-    const weeklyRevenueEl = document.getElementById('weekly-revenue');
-    const netProfitEl = document.getElementById('net-profit');
-    const profitMarginEl = document.getElementById('profit-margin');
-    const inventoryCostEl = document.getElementById('inventory-cost');
+    if (revenueSessionEl) {
+        revenueSessionEl.textContent = '$' + formatNumber(publicCost);
+    }
     
-    if (revenueSessionEl) revenueSessionEl.textContent = '$' + formatNumber(revenuePerSession);
-    if (costSessionEl) costSessionEl.textContent = '$' + formatNumber(costPerSession);
-    if (weeklyRevenueEl) weeklyRevenueEl.textContent = '$' + formatNumber(totalRevenue);
-    if (netProfitEl) netProfitEl.textContent = '$' + formatNumber(netProfit);
-    if (profitMarginEl) profitMarginEl.innerHTML = profitMargin + '<span class="metric-unit">%</span>';
-    if (inventoryCostEl) inventoryCostEl.textContent = '$' + formatNumber(inventoryCost);
-    
-    const revenueComp = document.getElementById('weekly-revenue-comparison');
-    if (revenueComp) {
-        const targetDiff = totalRevenue - targetRevenue;
-        if (targetDiff >= 0) {
-            revenueComp.parentElement.classList.add('positive');
-            revenueComp.parentElement.classList.remove('negative');
-            revenueComp.innerHTML = '<span class="arrow">▲</span><span>vs Meta: $' + formatNumber(targetRevenue) + '</span>';
+    const revenueCompEl = document.getElementById('revenue-session-comparison');
+    if (revenueCompEl) {
+        revenueCompEl.textContent = `Última Semana: $${formatNumber(publicCostPrevious)}`;
+        const compEl = revenueCompEl.parentElement;
+        compEl.classList.remove('positive', 'negative');
+        if (publicCost >= publicCostPrevious) {
+            compEl.classList.add('positive');
+            const arrow = compEl.querySelector('.arrow');
+            if (arrow) arrow.textContent = '▲';
         } else {
-            revenueComp.parentElement.classList.add('negative');
-            revenueComp.parentElement.classList.remove('positive');
-            revenueComp.innerHTML = '<span class="arrow">▼</span><span>vs Meta: $' + formatNumber(targetRevenue) + '</span>';
+            compEl.classList.add('negative');
+            const arrow = compEl.querySelector('.arrow');
+            if (arrow) arrow.textContent = '▼';
         }
     }
     
+    // Update Cost Per Session
+    const costSessionEl = document.getElementById('cost-session');
+    if (costSessionEl) {
+        costSessionEl.textContent = '$' + formatNumber(costPerSession);
+    }
+    
+    // Update Weekly Revenue
+    const weeklyRevenueEl = document.getElementById('weekly-revenue');
+    if (weeklyRevenueEl) {
+        weeklyRevenueEl.textContent = '$' + formatLargeNumber(weeklyRevenue);
+    }
+    
+    const weeklyRevenueCompEl = document.getElementById('weekly-revenue-comparison');
+    if (weeklyRevenueCompEl) {
+        const targetDiff = weeklyRevenue - targetRevenue;
+        weeklyRevenueCompEl.textContent = `vs Meta: $${formatLargeNumber(targetRevenue)}`;
+        const compEl = weeklyRevenueCompEl.parentElement;
+        compEl.classList.remove('positive', 'negative');
+        if (targetDiff >= 0) {
+            compEl.classList.add('positive');
+            const arrow = compEl.querySelector('.arrow');
+            if (arrow) arrow.textContent = '▲';
+        } else {
+            compEl.classList.add('negative');
+            const arrow = compEl.querySelector('.arrow');
+            if (arrow) arrow.textContent = '▼';
+        }
+    }
+    
+    // Update Net Profit
+    const netProfitEl = document.getElementById('net-profit');
     if (netProfitEl) {
-        const profitComp = netProfitEl.nextElementSibling;
-        if (profitComp) {
-            if (netProfit >= 0) {
-                profitComp.classList.add('positive');
-                profitComp.classList.remove('negative');
-                const arrow = profitComp.querySelector('.arrow');
-                if (arrow) arrow.textContent = '▲';
-            } else {
-                profitComp.classList.add('negative');
-                profitComp.classList.remove('positive');
-                const arrow = profitComp.querySelector('.arrow');
-                if (arrow) arrow.textContent = '▼';
-            }
+        netProfitEl.textContent = '$' + formatLargeNumber(netProfit);
+    }
+    
+    const netProfitCompEl = netProfitEl ? netProfitEl.nextElementSibling : null;
+    if (netProfitCompEl) {
+        netProfitCompEl.classList.remove('positive', 'negative');
+        if (netProfit >= 0) {
+            netProfitCompEl.classList.add('positive');
+            const arrow = netProfitCompEl.querySelector('.arrow');
+            if (arrow) arrow.textContent = '▲';
+        } else {
+            netProfitCompEl.classList.add('negative');
+            const arrow = netProfitCompEl.querySelector('.arrow');
+            if (arrow) arrow.textContent = '▼';
         }
     }
     
+    // Update Profit Margin
+    const profitMarginEl = document.getElementById('profit-margin');
+    if (profitMarginEl) {
+        profitMarginEl.innerHTML = profitMargin + '<span class="metric-unit">%</span>';
+    }
+    
+    // Update Charts
+    updateRevenueCostChart(revenueData, costData);
+    updateNetProfitChart(profitData);
+    
+    // Close modal
     const modal = document.getElementById('modalFinancial');
     if (modal) {
         modal.classList.remove('active');
@@ -1148,6 +1225,7 @@ function updateFinancialOverview(formData) {
     
     showSuccessMessage('Datos de Panorama Financiero actualizados correctamente');
 }
+
 
 // ========================================
 // UTILITY FUNCTIONS
@@ -1159,6 +1237,13 @@ function capitalize(str) {
 
 function formatNumber(num) {
     return parseFloat(num).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function formatLargeNumber(value) {
+    if (value >= 1000) {
+        return (value / 1000).toFixed(0) + 'K';
+    }
+    return value.toFixed(0);
 }
 
 console.log('Phase 2 Complete: All 4 quadrants functional!');
@@ -1439,4 +1524,105 @@ function updateOperationalGauge(percentage) {
         operationalCapacityGauge.data.datasets[0].data = [percentage, 100 - percentage];
         operationalCapacityGauge.update();
     }
+}
+
+// ========================================
+// DYNAMIC WEEKS FOR FINANCIAL OVERVIEW
+// ========================================
+
+function initializeDynamicWeeksFinancial() {
+    // For Revenue & Cost Trend
+    const numWeeksRevenueInput = document.getElementById('num-weeks-revenue');
+    const revenueContainer = document.getElementById('weekly-revenue-cost-container');
+    
+    if (numWeeksRevenueInput && revenueContainer) {
+        numWeeksRevenueInput.addEventListener('change', () => {
+            const numWeeks = parseInt(numWeeksRevenueInput.value) || 5;
+            generateRevenueCostFields(numWeeks, revenueContainer);
+        });
+    }
+    
+    // For Net Profit
+    const numWeeksProfitInput = document.getElementById('num-weeks-profit');
+    const profitContainer = document.getElementById('weekly-profit-container');
+    
+    if (numWeeksProfitInput && profitContainer) {
+        numWeeksProfitInput.addEventListener('change', () => {
+            const numWeeks = parseInt(numWeeksProfitInput.value) || 5;
+            generateProfitFields(numWeeks, profitContainer);
+        });
+    }
+}
+
+function generateRevenueCostFields(numWeeks, container) {
+    container.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'form-grid';
+    
+    for (let i = 1; i <= numWeeks; i++) {
+        // Revenue field
+        const revenueField = document.createElement('div');
+        revenueField.className = 'form-field';
+        const revenueLabel = document.createElement('label');
+        revenueLabel.setAttribute('for', `revenue-week-${i}`);
+        revenueLabel.textContent = `Ingresos Semana ${i} ($K)`;
+        const revenueInput = document.createElement('input');
+        revenueInput.type = 'number';
+        revenueInput.id = `revenue-week-${i}`;
+        revenueInput.name = `revenue-week-${i}`;
+        revenueInput.step = '1';
+        revenueInput.min = '0';
+        revenueInput.value = 400 + (i * 10);
+        revenueInput.required = true;
+        revenueField.appendChild(revenueLabel);
+        revenueField.appendChild(revenueInput);
+        grid.appendChild(revenueField);
+        
+        // Cost field
+        const costField = document.createElement('div');
+        costField.className = 'form-field';
+        const costLabel = document.createElement('label');
+        costLabel.setAttribute('for', `cost-week-${i}`);
+        costLabel.textContent = `Costos Semana ${i} ($K)`;
+        const costInput = document.createElement('input');
+        costInput.type = 'number';
+        costInput.id = `cost-week-${i}`;
+        costInput.name = `cost-week-${i}`;
+        costInput.step = '1';
+        costInput.min = '0';
+        costInput.value = 320 + (i * 5);
+        costInput.required = true;
+        costField.appendChild(costLabel);
+        costField.appendChild(costInput);
+        grid.appendChild(costField);
+    }
+    
+    container.appendChild(grid);
+}
+
+function generateProfitFields(numWeeks, container) {
+    container.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'form-grid';
+    
+    for (let i = 1; i <= numWeeks; i++) {
+        const field = document.createElement('div');
+        field.className = 'form-field';
+        const label = document.createElement('label');
+        label.setAttribute('for', `profit-week-${i}`);
+        label.textContent = `Utilidad Semana ${i} ($K)`;
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = `profit-week-${i}`;
+        input.name = `profit-week-${i}`;
+        input.step = '1';
+        input.min = '0';
+        input.value = 80 + (i * 5);
+        input.required = true;
+        field.appendChild(label);
+        field.appendChild(input);
+        grid.appendChild(field);
+    }
+    
+    container.appendChild(grid);
 }
